@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "test": "node --import tsx --test tests/router/vehicle.routes.test.ts",
+    "test": "node --import tsx --test tests/controller/vehicle.controller.test.ts",
     "build": "tsc",
     "start": "node dist/server.js"
   },

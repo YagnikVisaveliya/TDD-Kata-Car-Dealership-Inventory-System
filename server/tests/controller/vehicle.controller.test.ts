@@ -119,8 +119,8 @@ describe('searchVehiclesController', () => {
 
     await searchVehiclesController(fakePrisma as any)(req, res);
 
-    assert.strictEqual(status.mock.calls[0].arguments[0], 200);
-    const body = json.mock.calls[0].arguments[0];
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
+    const body = (json as any).mock.calls[0].arguments[0];
     assert.strictEqual(body.data.length, 1);
     assert.strictEqual(body.data[0].make, 'Toyota');
   });

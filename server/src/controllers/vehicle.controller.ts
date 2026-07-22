@@ -49,3 +49,40 @@ export const getVehiclesController = (prisma: PrismaClient) => async (req: Reque
         res.status(500).json(createResponse(false, 'Internal server error', null));
     }
 }
+
+export const searchVehiclesController = (prisma: PrismaClient) => async (req: Request, res: Response) => {
+    try {
+        const { make, model, category, minPrice, maxPrice } = req.query;
+        const filters: any = {};
+
+        if (make) filters.make = { equals: String(make), mode: 'insensitive' };
+        if (model) filters.model = { equals: String(model), mode: 'insensitive' };
+        if (category) filters.category = { equals: String(category), mode: 'insensitive' };
+
+        if (minPrice !== undefined || maxPrice !== undefined) {
+            filters.price = {};
+
+            if (minPrice !== undefined) {
+                const min = Number(minPrice);
+                if (isNaN(min)) {
+                return res.status(400).json(createResponse(false, 'minPrice must be a valid number', null));
+                }
+                filters.price.gte = min;
+            }
+
+            if (maxPrice !== undefined) {
+                const max = Number(maxPrice);
+                if (isNaN(max)) {
+                return res.status(400).json(createResponse(false, 'maxPrice must be a valid number', null));
+                }
+                filters.price.lte = max;
+            }
+        }
+        const vehicles = await prisma.vehicle.findMany({ where: filters });
+        return res.status(200).json(createResponse(true, 'Search results retrieved successfully', vehicles));
+        
+    } catch (error) {
+        console.error('Error in searchVehiclesController:', error);
+        res.status(500).json(createResponse(false, 'Internal server error', null));
+    }
+}
