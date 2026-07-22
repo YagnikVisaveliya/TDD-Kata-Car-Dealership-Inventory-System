@@ -1,6 +1,6 @@
 import { describe, test, mock } from 'node:test';
 import assert from 'node:assert';
-import { createVehicleController, getVehiclesController, searchVehiclesController, updateVehicleController, deleteVehicleController, purchaseVehicleController } from '../../src/controllers/vehicle.controller.js';
+import { createVehicleController, getVehiclesController, searchVehiclesController, updateVehicleController, deleteVehicleController, purchaseVehicleController, restockVehicleController } from '../../src/controllers/vehicle.controller.js';
 
 function createMockRes() {
   const json = mock.fn();
@@ -355,4 +355,29 @@ describe('purchaseVehicleController', () => {
 
     assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
   });
+});
+
+
+describe('restockVehicleController', () => {
+  test('returns 200 and increments quantity on successful restock', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5,
+      })),
+      update: mock.fn(async ({ data }: any) => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5 + data.quantity.increment,
+      })),
+    });
+    const req: any = { params: { id: 'v-1' }, body: { quantity: 10 } };
+    const { res, status, json } = createMockRes();
+
+    await restockVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
+    const body = json.mock.calls[0].arguments[0];
+    assert.strictEqual(body.success, true);
+    assert.strictEqual(body.data.quantity, 15);
+  });
+
+  
 });
