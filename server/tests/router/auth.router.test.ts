@@ -65,3 +65,55 @@ describe('POST /api/auth/register', () => {
     assert.strictEqual(response.body.success, false);
   });
 });
+
+describe('POST /api/auth/login', () => {
+  const testEmail = 'login-router-test@example.com';
+  const testPassword = 'validPassword123';
+
+  before(async () => {
+    await prisma.user.deleteMany({ where: { email: testEmail } });
+
+    await request(app).post('/api/v1/auth/register').send({
+      name: 'Login Router Test',
+      email: testEmail,
+      password: testPassword,
+    });
+  });
+
+  after(async () => {
+    await prisma.user.deleteMany({ where: { email: testEmail } });
+    await prisma.$disconnect();
+  });
+
+  test('returns 200 with token when credentials are correct', async () => {
+    const response = await request(app).post('/api/v1/auth/login').send({
+      email: testEmail,
+      password: testPassword,
+    });
+
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.success, true);
+    assert.ok(response.body.data.token);
+    assert.strictEqual(response.body.data.user.email, testEmail);
+  });
+
+  test('returns 400 when password is incorrect', async () => {
+    const response = await request(app).post('/api/v1/auth/login').send({
+      email: testEmail,
+      password: 'wrongPassword',
+    });
+
+    assert.strictEqual(response.status, 400);
+    assert.strictEqual(response.body.success, false);
+  });
+
+  test('returns 400 when email does not exist', async () => {
+    const response = await request(app).post('/api/v1/auth/login').send({
+      email: 'nonexistent@example.com',
+      password: 'anyPassword123',
+    });
+
+    assert.strictEqual(response.status, 400);
+    assert.strictEqual(response.body.success, false);
+  });
+});

@@ -67,12 +67,12 @@ export const loginController = (prisma: PrismaClient) => async (req: Request, re
         
         const user = await prisma.user.findUnique({ where: { email } });
         if(!user) {
-            return res.status(401).json(createResponse(false, 'Invalid email or password', null));
+            return res.status(400).json(createResponse(false, 'Invalid email or password', null));
         }
 
         const passwordMatches = await bcrypt.compare(password, user.password);
         if (!passwordMatches) {
-        return res.status(401).json(createResponse(false, 'Invalid email or password', null));
+        return res.status(400).json(createResponse(false, 'Invalid email or password', null));
         }
 
         const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
