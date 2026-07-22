@@ -6,10 +6,13 @@ import { prisma } from '../../src/config/prisma.js';
 
 describe('Vehicle routes', () => {
   let token: string;
+  let adminToken: string;
   const testEmail = 'vehicle-router-test@example.com';
+  const adminEmail = 'vehicle-admin-test@example.com';
 
   before(async () => {
     await prisma.user.deleteMany({ where: { email: testEmail } });
+    await prisma.user.deleteMany({ where: { email: adminEmail } });
     await prisma.vehicle.deleteMany({ where: { make: 'RouterTestMake' } });
 
     await request(app).post('/api/auth/register').send({
@@ -24,22 +27,46 @@ describe('Vehicle routes', () => {
     });
 
     token = loginRes.body.data.token;
+
+    await request(app).post('/api/auth/register').send({
+      name: 'Admin Test',
+      email: adminEmail,
+      password: 'validPassword123',
+    });
+    await prisma.user.update({ where: { email: adminEmail }, data: { role: 'ADMIN' } });
+
+    const adminLoginRes = await request(app).post('/api/auth/login').send({
+      email: adminEmail,
+      password: 'validPassword123',
+    });
+
+    adminToken = adminLoginRes.body.data.token;
   });
 
   after(async () => {
     await prisma.vehicle.deleteMany({ where: { make: 'RouterTestMake' } });
     await prisma.user.deleteMany({ where: { email: testEmail } });
+    await prisma.user.deleteMany({ where: { email: adminEmail } });
     await prisma.$disconnect();
   });
 
-  test('POST /api/vehicles creates a vehicle when authenticated', async () => {
+  test('POST /api/vehicles creates a vehicle when authenticated as admin', async () => {
+    const response = await request(app)
+      .post('/api/vehicles')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ make: 'RouterTestMake', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5 });
+
+    assert.strictEqual(response.status, 201);
+    assert.strictEqual(response.body.data.make, 'RouterTestMake');
+  });
+
+  test('POST /api/vehicles returns 403 when user is not admin', async () => {
     const response = await request(app)
       .post('/api/vehicles')
       .set('Authorization', `Bearer ${token}`)
       .send({ make: 'RouterTestMake', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5 });
 
-    assert.strictEqual(response.status, 201);
-    assert.strictEqual(response.body.data.make, 'RouterTestMake');
+    assert.strictEqual(response.status, 403);
   });
 
   test('POST /api/vehicles returns 401 when no token is provided', async () => {
@@ -68,7 +95,7 @@ describe('Vehicle routes', () => {
   test('GET /api/vehicles/search filters by make', async () => {
     await request(app)
         .post('/api/vehicles')
-        .set('Authorization', `Bearer ${token}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({ make: 'RouterTestMake', model: 'SearchModel', category: 'SUV', price: 30000, quantity: 2 });
 
   const response = await request(app)
@@ -95,44 +122,33 @@ describe('Vehicle routes', () => {
   });
   describe('PUT and DELETE /api/vehicles/:id', () => {
     let vehicleId: string;
-    let adminToken: string;
-    const adminEmail = 'vehicle-admin-test@example.com';
 
     before(async () => {
       const createRes = await request(app)
         .post('/api/vehicles')
-        .set('Authorization', `Bearer ${token}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({ make: 'RouterTestMake', model: 'OriginalModel', category: 'Sedan', price: 20000, quantity: 5 });
 
       vehicleId = createRes.body.data.id;
-
-      await prisma.user.deleteMany({ where: { email: adminEmail } });
-      await request(app).post('/api/auth/register').send({
-        name: 'Admin Test',
-        email: adminEmail,
-        password: 'validPassword123',
-      });
-      await prisma.user.update({ where: { email: adminEmail }, data: { role: 'ADMIN' } });
-
-      const adminLoginRes = await request(app).post('/api/auth/login').send({
-        email: adminEmail,
-        password: 'validPassword123',
-      });
-      adminToken = adminLoginRes.body.data.token;
     });
 
-    after(async () => {
-      await prisma.user.deleteMany({ where: { email: adminEmail } });
-    });
-
-    test('PUT /api/vehicles/:id updates a vehicle when authenticated', async () => {
+    test('PUT /api/vehicles/:id updates a vehicle when authenticated as admin', async () => {
       const response = await request(app)
         .put(`/api/vehicles/${vehicleId}`)
-        .set('Authorization', `Bearer ${token}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({ make: 'UpdatedMake', model: 'UpdatedModel', category: 'UpdatedCategory', price: 25000, quantity: 10 });
 
       assert.strictEqual(response.status, 200);
       assert.strictEqual(response.body.data.make, 'UpdatedMake');
+    });
+
+    test('PUT /api/vehicles/:id returns 403 when user is not admin', async () => {
+      const response = await request(app)
+        .put(`/api/vehicles/${vehicleId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ make: 'UpdatedMake' });
+
+      assert.strictEqual(response.status, 403);
     });
 
     test('PUT /api/vehicles/:id returns 401 when no token is provided', async () => {
@@ -171,7 +187,7 @@ describe('Vehicle routes', () => {
     before(async () => {
       const createRes = await request(app)
         .post('/api/vehicles')
-        .set('Authorization', `Bearer ${token}`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .send({ make: 'RouterTestMake', model: 'PurchaseModel', category: 'SUV', price: 30000, quantity: 5 });
       vehicleId = createRes.body.data.id;
     });
@@ -194,34 +210,14 @@ describe('Vehicle routes', () => {
 
   describe('POST /api/vehicles/:id/purchase and /restock', () => {
   let vehicleId: string;
-  let adminToken: string;
-  const adminEmail = 'vehicle-purchase-admin@example.com';
 
   before(async () => {
     const createRes = await request(app)
       .post('/api/vehicles')
-      .set('Authorization', `Bearer ${token}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send({ make: 'RouterTestMake', model: 'PurchaseModel', category: 'Sedan', price: 20000, quantity: 5 });
 
     vehicleId = createRes.body.data.id;
-
-    await prisma.user.deleteMany({ where: { email: adminEmail } });
-    await request(app).post('/api/auth/register').send({
-      name: 'Purchase Admin Test',
-      email: adminEmail,
-      password: 'validPassword123',
-    });
-    await prisma.user.update({ where: { email: adminEmail }, data: { role: 'ADMIN' } });
-
-    const adminLoginRes = await request(app).post('/api/auth/login').send({
-      email: adminEmail,
-      password: 'validPassword123',
-    });
-    adminToken = adminLoginRes.body.data.token;
-  });
-
-  after(async () => {
-    await prisma.user.deleteMany({ where: { email: adminEmail } });
   });
 
   test('POST /api/vehicles/:id/purchase decrements quantity', async () => {

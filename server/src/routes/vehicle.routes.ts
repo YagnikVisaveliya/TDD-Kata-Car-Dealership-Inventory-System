@@ -6,10 +6,10 @@ import { adminMiddleware } from '../middleware/admin.middleware.js';
 
 const router = Router();
 
-router.route('/').post(authMiddleware, createVehicleController(prisma))
+router.route('/').post(authMiddleware,adminMiddleware, createVehicleController(prisma))
 router.route('/').get(authMiddleware, getVehiclesController(prisma))
 router.route('/search').get(authMiddleware, searchVehiclesController(prisma))
-router.route('/:id').put(authMiddleware, updateVehicleController(prisma))
+router.route('/:id').put(authMiddleware, adminMiddleware, updateVehicleController(prisma))
 router.route('/:id').delete(authMiddleware, adminMiddleware, deleteVehicleController(prisma))
 router.route('/:id/purchase').post(authMiddleware, purchaseVehicleController(prisma))
 router.route('/:id/restock').post(authMiddleware, adminMiddleware, restockVehicleController(prisma))
