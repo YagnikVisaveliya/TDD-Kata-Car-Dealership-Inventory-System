@@ -75,7 +75,7 @@ export const loginController = (prisma: PrismaClient) => async (req: Request, re
         return res.status(400).json(createResponse(false, 'Invalid email or password', null));
         }
 
-        const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1h' });
         console.log(token)
 
         const { password: _password, ...safeUser } = user;

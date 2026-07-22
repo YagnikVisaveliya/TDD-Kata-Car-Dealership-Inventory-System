@@ -92,5 +92,77 @@ describe('Vehicle routes', () => {
         .set('Authorization', `Bearer ${token}`);
 
     assert.strictEqual(response.status, 400);
+  });
+  describe('PUT and DELETE /api/vehicles/:id', () => {
+    let vehicleId: string;
+    let adminToken: string;
+    const adminEmail = 'vehicle-admin-test@example.com';
+
+    before(async () => {
+      const createRes = await request(app)
+        .post('/api/vehicles')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ make: 'RouterTestMake', model: 'OriginalModel', category: 'Sedan', price: 20000, quantity: 5 });
+
+      vehicleId = createRes.body.data.id;
+
+      await prisma.user.deleteMany({ where: { email: adminEmail } });
+      await request(app).post('/api/auth/register').send({
+        name: 'Admin Test',
+        email: adminEmail,
+        password: 'validPassword123',
+      });
+      await prisma.user.update({ where: { email: adminEmail }, data: { role: 'ADMIN' } });
+
+      const adminLoginRes = await request(app).post('/api/auth/login').send({
+        email: adminEmail,
+        password: 'validPassword123',
+      });
+      adminToken = adminLoginRes.body.data.token;
     });
+
+    after(async () => {
+      await prisma.user.deleteMany({ where: { email: adminEmail } });
+    });
+
+    test('PUT /api/vehicles/:id updates a vehicle when authenticated', async () => {
+      const response = await request(app)
+        .put(`/api/vehicles/${vehicleId}`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ make: 'UpdatedMake', model: 'UpdatedModel', category: 'UpdatedCategory', price: 25000, quantity: 10 });
+
+      assert.strictEqual(response.status, 200);
+      assert.strictEqual(response.body.data.make, 'UpdatedMake');
+    });
+
+    test('PUT /api/vehicles/:id returns 401 when no token is provided', async () => {
+      const response = await request(app)
+        .put(`/api/vehicles/${vehicleId}`)
+        .send({ make: 'UpdatedMake' });
+
+      assert.strictEqual(response.status, 401);
+    });
+
+    test('DELETE /api/vehicles/:id returns 403 when user is not admin', async () => {
+      const response = await request(app)
+        .delete(`/api/vehicles/${vehicleId}`)
+        .set('Authorization', `Bearer ${token}`);
+
+      assert.strictEqual(response.status, 403);
+    });
+
+    test('DELETE /api/vehicles/:id deletes a vehicle when authenticated as admin', async () => {
+      const response = await request(app)
+        .delete(`/api/vehicles/${vehicleId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      assert.strictEqual(response.status, 200);
+    });
+
+    test('DELETE /api/vehicles/:id returns 401 when no token is provided', async () => {
+      const response = await request(app).delete(`/api/vehicles/${vehicleId}`);
+
+      assert.strictEqual(response.status, 401);
+    });
+  });
 });
