@@ -14,3 +14,23 @@ export function isValidPassword(password: string): boolean {
 export function isValidName(name: string): boolean {
     return typeof name === 'string' && name.trim().length > 0;
 }
+
+export function isValidVehicleMake(make: string): boolean {
+    return typeof make === 'string' && make.trim().length > 0;
+}
+
+export function isValidVehicleModel(model: string): boolean {
+    return typeof model === 'string' && model.trim().length > 0;
+}
+
+export function isValidVehicleCategory(category: string): boolean {
+    return typeof category === 'string' && category.trim().length > 0;
+}
+
+export function isValidVehiclePrice(price: number): boolean {
+    return typeof price === 'number' && price > 0;
+}
+
+export function isValidVehicleQuantity(quantity: number): boolean {
+    return typeof quantity === 'number' && quantity >= 0;
+}
