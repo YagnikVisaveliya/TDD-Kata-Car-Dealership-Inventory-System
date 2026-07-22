@@ -1,5 +1,6 @@
 import express from 'express';
 import authRoutes from './routes/auth.route';
+import vehicleRoutes from './routes/vehicle.routes.js';
 
 const app = express();
 
@@ -10,5 +11,6 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/v1/auth', authRoutes);
+  app.use('/api/v1/vehicles', vehicleRoutes);
 
 export { app };
