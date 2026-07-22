@@ -1,6 +1,7 @@
 import { describe, test, mock } from 'node:test';
 import assert from 'node:assert';
-import { registerController } from '../../src/controllers/auth.controller.js';
+import { registerController, loginController } from '../../src/controllers/auth.controller.js';
+import bcrypt from 'bcrypt';
 
 function createMockRes() {
   const json = mock.fn();
@@ -125,5 +126,90 @@ describe('registerController', () => {
       assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
       assert.match(json.mock.calls[0].arguments[0].message, /password/i);
     });
+  });
+});
+
+// Login controller tests
+
+describe('loginController', () => {
+  test('returns 200 with token when credentials are correct', async () => {
+    const hashedPassword = await bcrypt.hash('correctPassword123', 10);
+    const fakePrisma = {
+      user: {
+        findUnique: mock.fn(async () => ({
+          id: 'u-1',
+          name: 'Test User',
+          email: 'test@example.com',
+          password: hashedPassword,
+          role: 'CUSTOMER',
+        })),
+      },
+    };
+
+    const req: any = {
+      body: { email: 'test@example.com', password: 'correctPassword123' },
+    };
+    const { res, status, json } = createMockRes();
+
+    await loginController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
+    const body = json.mock.calls[0].arguments[0];
+    assert.strictEqual(body.success, true);
+    assert.ok(body.data.token);
+    assert.strictEqual(body.data.user.email, 'test@example.com');
+    assert.strictEqual(body.data.user.password, undefined);
+  });
+
+  test('returns 401 when email does not exist', async () => {
+    const fakePrisma = {
+      user: { findUnique: mock.fn(async () => null) },
+    };
+
+    const req: any = {
+      body: { email: 'missing@example.com', password: 'anyPassword123' },
+    };
+    const { res, status, json } = createMockRes();
+
+    await loginController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 401);
+    assert.strictEqual(json.mock.calls[0].arguments[0].success, false);
+  });
+
+  test('returns 401 when password is incorrect', async () => {
+    const hashedPassword = await bcrypt.hash('correctPassword123', 10);
+    const fakePrisma = {
+      user: {
+        findUnique: mock.fn(async () => ({
+          id: 'u-1',
+          name: 'Test User',
+          email: 'test@example.com',
+          password: hashedPassword,
+          role: 'CUSTOMER',
+        })),
+      },
+    };
+
+    const req: any = {
+      body: { email: 'test@example.com', password: 'wrongPassword' },
+    };
+    const { res, status, json } = createMockRes();
+
+    await loginController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 401);
+    assert.strictEqual(json.mock.calls[0].arguments[0].success, false);
+  });
+
+  test('returns 400 when email or password is missing', async () => {
+    const fakePrisma = { user: { findUnique: mock.fn(async () => null) } };
+    const req: any = { body: { email: 'test@example.com' } };
+    const { res, status, json } = createMockRes();
+
+    await loginController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+    assert.strictEqual(json.mock.calls[0].arguments[0].success, false);
   });
 });
