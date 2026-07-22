@@ -20,7 +20,7 @@ describe('POST /api/auth/register', () => {
 
     test('should register a new user successfully', async () => {
         const response = await request(app)
-            .post('/api/v1/auth/register')
+            .post('/api/auth/register')
             .send({
                 name: 'Router Test User',
                 email: testEmail,
@@ -36,14 +36,14 @@ describe('POST /api/auth/register', () => {
 
     test('return 400 when email already exists', async () => {
 
-        await request(app).post('/api/v1/auth/register').send({
+        await request(app).post('/api/auth/register').send({
             name: 'Router Test',
             email: testEmail,
             password: 'validPassword123',
         });
 
         const response = await request(app)
-            .post('/api/v1/auth/register')
+            .post('/api/auth/register')
             .send({
                 name: 'Router Test User',
                 email: testEmail,
@@ -55,7 +55,7 @@ describe('POST /api/auth/register', () => {
     });
 
     test('returns 400 when password is too short', async () => {
-    const response = await request(app).post('/api/v1/auth/register').send({
+    const response = await request(app).post('/api/auth/register').send({
       name: 'Router Test',
       email: 'short-pass@example.com',
       password: 'short1',
@@ -73,7 +73,7 @@ describe('POST /api/auth/login', () => {
   before(async () => {
     await prisma.user.deleteMany({ where: { email: testEmail } });
 
-    await request(app).post('/api/v1/auth/register').send({
+    await request(app).post('/api/auth/register').send({
       name: 'Login Router Test',
       email: testEmail,
       password: testPassword,
@@ -86,7 +86,7 @@ describe('POST /api/auth/login', () => {
   });
 
   test('returns 200 with token when credentials are correct', async () => {
-    const response = await request(app).post('/api/v1/auth/login').send({
+    const response = await request(app).post('/api/auth/login').send({
       email: testEmail,
       password: testPassword,
     });
@@ -98,7 +98,7 @@ describe('POST /api/auth/login', () => {
   });
 
   test('returns 400 when password is incorrect', async () => {
-    const response = await request(app).post('/api/v1/auth/login').send({
+    const response = await request(app).post('/api/auth/login').send({
       email: testEmail,
       password: 'wrongPassword',
     });
@@ -108,7 +108,7 @@ describe('POST /api/auth/login', () => {
   });
 
   test('returns 400 when email does not exist', async () => {
-    const response = await request(app).post('/api/v1/auth/login').send({
+    const response = await request(app).post('/api/auth/login').send({
       email: 'nonexistent@example.com',
       password: 'anyPassword123',
     });

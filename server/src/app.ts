@@ -10,7 +10,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'Good' });
 });
 
-app.use('/api/v1/auth', authRoutes);
-  app.use('/api/v1/vehicles', vehicleRoutes);
+app.use('/api/auth', authRoutes);
+  app.use('/api/vehicles', vehicleRoutes);
 
 export { app };

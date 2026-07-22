@@ -12,13 +12,13 @@ describe('Vehicle routes', () => {
     await prisma.user.deleteMany({ where: { email: testEmail } });
     await prisma.vehicle.deleteMany({ where: { make: 'RouterTestMake' } });
 
-    await request(app).post('/api/v1/auth/register').send({
+    await request(app).post('/api/auth/register').send({
       name: 'Vehicle Router Test',
       email: testEmail,
       password: 'validPassword123',
     });
 
-    const loginRes = await request(app).post('/api/v1/auth/login').send({
+    const loginRes = await request(app).post('/api/auth/login').send({
       email: testEmail,
       password: 'validPassword123',
     });
@@ -32,9 +32,9 @@ describe('Vehicle routes', () => {
     await prisma.$disconnect();
   });
 
-  test('POST /api/v1/vehicles creates a vehicle when authenticated', async () => {
+  test('POST /api/vehicles creates a vehicle when authenticated', async () => {
     const response = await request(app)
-      .post('/api/v1/vehicles')
+      .post('/api/vehicles')
       .set('Authorization', `Bearer ${token}`)
       .send({ make: 'RouterTestMake', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5 });
 
@@ -42,26 +42,55 @@ describe('Vehicle routes', () => {
     assert.strictEqual(response.body.data.make, 'RouterTestMake');
   });
 
-  test('POST /api/v1/vehicles returns 401 when no token is provided', async () => {
+  test('POST /api/vehicles returns 401 when no token is provided', async () => {
     const response = await request(app)
-      .post('/api/v1/vehicles')
+      .post('/api/vehicles')
       .send({ make: 'RouterTestMake', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5 });
 
     assert.strictEqual(response.status, 401);
   });
 
-  test('GET /api/v1/vehicles returns list when authenticated', async () => {
+  test('GET /api/vehicles returns list when authenticated', async () => {
     const response = await request(app)
-      .get('/api/v1/vehicles')
+      .get('/api/vehicles')
       .set('Authorization', `Bearer ${token}`);
 
     assert.strictEqual(response.status, 200);
     assert.ok(Array.isArray(response.body.data));
   });
 
-  test('GET /api/v1/vehicles returns 401 when no token is provided', async () => {
-    const response = await request(app).get('/api/v1/vehicles');
+  test('GET /api/vehicles returns 401 when no token is provided', async () => {
+    const response = await request(app).get('/api/vehicles');
 
     assert.strictEqual(response.status, 401);
   });
+
+  test('GET /api/vehicles/search filters by make', async () => {
+    await request(app)
+        .post('/api/vehicles')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ make: 'RouterTestMake', model: 'SearchModel', category: 'SUV', price: 30000, quantity: 2 });
+
+  const response = await request(app)
+    .get('/api/vehicles/search?make=RouterTestMake')
+    .set('Authorization', `Bearer ${token}`);
+
+    assert.strictEqual(response.status, 200);
+    assert.ok(response.body.data.length >= 1);
+    assert.strictEqual(response.body.data[0].make, 'RouterTestMake');
+    });
+
+    test('GET /api/vehicles/search returns 401 when no token is provided', async () => {
+    const response = await request(app).get('/api/vehicles/search?make=RouterTestMake');
+
+    assert.strictEqual(response.status, 401);
+    });
+
+    test('GET /api/vehicles/search returns 400 for invalid price filter', async () => {
+    const response = await request(app)
+        .get('/api/vehicles/search?minPrice=notanumber')
+        .set('Authorization', `Bearer ${token}`);
+
+    assert.strictEqual(response.status, 400);
+    });
 });
