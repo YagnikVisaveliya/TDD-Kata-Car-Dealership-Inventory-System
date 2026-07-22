@@ -1,6 +1,6 @@
 import { describe, test, mock } from 'node:test';
 import assert from 'node:assert';
-import { createVehicleController, getVehiclesController, searchVehiclesController } from '../../src/controllers/vehicle.controller.js';
+import { createVehicleController, getVehiclesController, searchVehiclesController, updateVehicleController } from '../../src/controllers/vehicle.controller.js';
 
 function createMockRes() {
   const json = mock.fn();
@@ -160,5 +160,88 @@ describe('searchVehiclesController', () => {
 
     assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
     assert.deepStrictEqual((json as any).mock.calls[0].arguments[0].data, []);
+  });
+});
+
+describe('updateVehicleController', () => {
+  test('returns 200 with updated vehicle on success', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5,
+      })),
+      update: mock.fn(async ({ data }: any) => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5, ...data,
+      })),
+    });
+    const req: any = { params: { id: 'v-1' }, body: { price: 23000 } };
+    const { res, status, json } = createMockRes();
+
+    await updateVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
+    const body = (json as any).mock.calls[0].arguments[0];
+    assert.strictEqual(body.success, true);
+    assert.strictEqual(body.data.price, 23000);
+  });
+
+  test('returns 404 when vehicle does not exist', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => null),
+    });
+    const req: any = { params: { id: 'nonexistent' }, body: { price: 23000 } };
+    const { res, status, json } = createMockRes();
+
+    await updateVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 404);
+    assert.strictEqual((json as any).mock.calls[0].arguments[0].success, false);
+  });
+
+  test('returns 400 when price is negative', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5,
+      })),
+    });
+    const req: any = { params: { id: 'v-1' }, body: { price: -500 } };
+    const { res, status, json } = createMockRes();
+
+    await updateVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+    assert.match((json as any).mock.calls[0].arguments[0].message, /price/i);
+  });
+
+  test('returns 400 when quantity is negative', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5,
+      })),
+    });
+    const req: any = { params: { id: 'v-1' }, body: { quantity: -1 } };
+    const { res, status, json } = createMockRes();
+
+    await updateVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+    assert.match((json as any).mock.calls[0].arguments[0].message, /quantity/i);
+  });
+
+  test('allows partial update with only one field', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5,
+      })),
+      update: mock.fn(async ({ data }: any) => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5, ...data,
+      })),
+    });
+    const req: any = { params: { id: 'v-1' }, body: { quantity: 10 } };
+    const { res, status, json } = createMockRes();
+
+    await updateVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
+    assert.strictEqual((json as any).mock.calls[0].arguments[0].data.quantity, 10);
   });
 });
