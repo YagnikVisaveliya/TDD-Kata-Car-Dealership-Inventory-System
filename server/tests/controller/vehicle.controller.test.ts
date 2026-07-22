@@ -1,6 +1,6 @@
 import { describe, test, mock } from 'node:test';
 import assert from 'node:assert';
-import { createVehicleController, getVehiclesController, searchVehiclesController, updateVehicleController } from '../../src/controllers/vehicle.controller.js';
+import { createVehicleController, getVehiclesController, searchVehiclesController, updateVehicleController, deleteVehicleController  } from '../../src/controllers/vehicle.controller.js';
 
 function createMockRes() {
   const json = mock.fn();
@@ -243,5 +243,38 @@ describe('updateVehicleController', () => {
 
     assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
     assert.strictEqual((json as any).mock.calls[0].arguments[0].data.quantity, 10);
+  });
+});
+
+describe('deleteVehicleController', () => {
+  test('returns 200 when vehicle is deleted successfully', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5,
+      })),
+      delete: mock.fn(async () => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5,
+      })),
+    });
+    const req: any = { params: { id: 'v-1' } };
+    const { res, status, json } = createMockRes();
+
+    await deleteVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
+    assert.strictEqual(json.mock.calls[0].arguments[0].success, true);
+  });
+
+  test('returns 404 when vehicle does not exist', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => null),
+    });
+    const req: any = { params: { id: 'nonexistent' } };
+    const { res, status, json } = createMockRes();
+
+    await deleteVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 404);
+    assert.strictEqual(json.mock.calls[0].arguments[0].success, false);
   });
 });

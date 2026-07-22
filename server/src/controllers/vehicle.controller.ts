@@ -147,3 +147,18 @@ export const updateVehicleController = (prisma: PrismaClient) => async (req: Req
         res.status(500).json(createResponse(false, 'Internal server error', null));
     }
 }
+
+export const deleteVehicleController = (prisma: PrismaClient) => async (req: Request<UpdateVehicleParams>, res: Response) => {
+    try {
+        const { id } = req.params;
+        const existingVehicle = await prisma.vehicle.findUnique({ where: { id } });
+        if(!existingVehicle) {
+            return res.status(404).json(createResponse(false, 'Vehicle not found', null));
+        }
+        await prisma.vehicle.delete({ where: { id } });
+        return res.status(200).json(createResponse(true, 'Vehicle deleted successfully', null));
+    } catch (error) {
+        console.error('Error in deleteVehicleController:', error);
+        res.status(500).json(createResponse(false, 'Internal server error', null));
+    }
+}
