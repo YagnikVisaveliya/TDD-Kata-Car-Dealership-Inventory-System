@@ -22,7 +22,7 @@ test('AuthService.register() hashes the password before saving', async () => {
   assert.strictEqual(result.name, 'Test User');
   assert.strictEqual(result.email, 'test@example.com');
   assert.notStrictEqual(savedData.password, 'plainPassword123');
-  assert.strictEqual(result.password, undefined);
+  assert.strictEqual((result as any).password, undefined);
 });
 
 test('AuthService.register() throws if email already exists', async () => {
