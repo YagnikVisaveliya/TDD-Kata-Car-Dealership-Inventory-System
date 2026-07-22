@@ -191,4 +191,75 @@ describe('Vehicle routes', () => {
     });
 
   });
+
+  describe('POST /api/vehicles/:id/purchase and /restock', () => {
+  let vehicleId: string;
+  let adminToken: string;
+  const adminEmail = 'vehicle-purchase-admin@example.com';
+
+  before(async () => {
+    const createRes = await request(app)
+      .post('/api/vehicles')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ make: 'RouterTestMake', model: 'PurchaseModel', category: 'Sedan', price: 20000, quantity: 5 });
+
+    vehicleId = createRes.body.data.id;
+
+    await prisma.user.deleteMany({ where: { email: adminEmail } });
+    await request(app).post('/api/auth/register').send({
+      name: 'Purchase Admin Test',
+      email: adminEmail,
+      password: 'validPassword123',
+    });
+    await prisma.user.update({ where: { email: adminEmail }, data: { role: 'ADMIN' } });
+
+    const adminLoginRes = await request(app).post('/api/auth/login').send({
+      email: adminEmail,
+      password: 'validPassword123',
+    });
+    adminToken = adminLoginRes.body.data.token;
+  });
+
+  after(async () => {
+    await prisma.user.deleteMany({ where: { email: adminEmail } });
+  });
+
+  test('POST /api/vehicles/:id/purchase decrements quantity', async () => {
+    const response = await request(app)
+      .post(`/api/vehicles/${vehicleId}/purchase`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ quantity: 2 });
+
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.data.quantity, 3);
+  });
+
+  test('POST /api/vehicles/:id/purchase returns 400 when exceeding stock', async () => {
+    const response = await request(app)
+      .post(`/api/vehicles/${vehicleId}/purchase`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ quantity: 999 });
+
+    assert.strictEqual(response.status, 400);
+  });
+
+  test('POST /api/vehicles/:id/restock returns 403 when user is not admin', async () => {
+    const response = await request(app)
+      .post(`/api/vehicles/${vehicleId}/restock`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ quantity: 10 });
+
+    assert.strictEqual(response.status, 403);
+  });
+
+  test('POST /api/vehicles/:id/restock increments quantity when admin', async () => {
+    const response = await request(app)
+      .post(`/api/vehicles/${vehicleId}/restock`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ quantity: 10 });
+
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(response.body.data.quantity, 13);
+  });
+});
 });

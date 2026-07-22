@@ -161,7 +161,7 @@ describe('loginController', () => {
     assert.strictEqual(body.data.user.password, undefined);
   });
 
-  test('returns 401 when email does not exist', async () => {
+  test('returns 400 when email does not exist', async () => {
     const fakePrisma = {
       user: { findUnique: mock.fn(async () => null) },
     };
@@ -173,11 +173,11 @@ describe('loginController', () => {
 
     await loginController(fakePrisma as any)(req, res);
 
-    assert.strictEqual((status as any).mock.calls[0].arguments[0], 401);
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
     assert.strictEqual(json.mock.calls[0].arguments[0].success, false);
   });
 
-  test('returns 401 when password is incorrect', async () => {
+  test('returns 400 when password is incorrect', async () => {
     const hashedPassword = await bcrypt.hash('correctPassword123', 10);
     const fakePrisma = {
       user: {
@@ -198,7 +198,7 @@ describe('loginController', () => {
 
     await loginController(fakePrisma as any)(req, res);
 
-    assert.strictEqual((status as any).mock.calls[0].arguments[0], 401);
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
     assert.strictEqual(json.mock.calls[0].arguments[0].success, false);
   });
 

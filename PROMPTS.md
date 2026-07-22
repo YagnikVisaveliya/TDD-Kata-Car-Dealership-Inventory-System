@@ -47,3 +47,8 @@ kata-scoped project and Incubyte's live pairing-round format.
 since the spec only requires "token-based authentication" without
 mentioning session refresh — kept a single JWT with 1h expiry to avoid
 scope creep, noted the trade-off for the README.
+
+---
+
+**Prompt:** "Give Test file for vehical router which contain all routes like POST ,GET ,PUT ,DELETE Vehicle,purchase Vehicle,Restock Vehicle
+**Summary:** Here is the complete, production-ready VehicleService.test.ts file based on your Vehicle schema. It uses the native node:test runner, node:assert/strict, and standard TypeScript type casting to mock the Prisma client.
