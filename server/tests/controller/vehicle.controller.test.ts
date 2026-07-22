@@ -379,5 +379,43 @@ describe('restockVehicleController', () => {
     assert.strictEqual(body.data.quantity, 15);
   });
 
-  
+  test('returns 404 when vehicle does not exist', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => null),
+    });
+    const req: any = { params: { id: 'nonexistent' }, body: { quantity: 10 } };
+    const { res, status, json } = createMockRes();
+
+    await restockVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 404);
+  });
+
+  test('returns 400 when quantity is missing or invalid', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5,
+      })),
+    });
+    const req: any = { params: { id: 'v-1' }, body: {} };
+    const { res, status, json } = createMockRes();
+
+    await restockVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+  });
+
+  test('returns 400 when quantity is zero or negative', async () => {
+    const fakePrisma = createFakePrisma({
+      findUnique: mock.fn(async () => ({
+        id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5,
+      })),
+    });
+    const req: any = { params: { id: 'v-1' }, body: { quantity: -5 } };
+    const { res, status, json } = createMockRes();
+
+    await restockVehicleController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+  });
 });

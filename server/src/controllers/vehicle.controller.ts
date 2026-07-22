@@ -194,3 +194,29 @@ export const purchaseVehicleController = (prisma: PrismaClient) => async (req: R
         res.status(500).json(createResponse(false, 'Internal server error', null));
     }
 }
+
+export const restockVehicleController = (prisma: PrismaClient) => async (req: Request<UpdateVehicleParams>, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { quantity } = req.body;
+
+        if (quantity === undefined || typeof quantity !== 'number' || isNaN(quantity) || quantity <= 0) {
+            return res.status(400).json(createResponse(false, 'Quantity must be a positive number', null));
+        }
+
+        const vehicle = await prisma.vehicle.findUnique({ where: { id } });
+        if (!vehicle) {
+            return res.status(404).json(createResponse(false, 'Vehicle not found', null));
+        }
+
+        const updated = await prisma.vehicle.update({
+            where: { id },
+            data: { quantity: { increment: quantity } },
+        });
+
+        return res.status(200).json(createResponse(true, 'Restock successful', updated));
+    } catch (error) {
+        console.error('Error in restockVehicleController:', error);
+        res.status(500).json(createResponse(false, 'Internal server error', null));
+    }
+}
