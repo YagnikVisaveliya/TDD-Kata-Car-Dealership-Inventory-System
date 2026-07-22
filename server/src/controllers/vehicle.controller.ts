@@ -3,6 +3,11 @@ import { PrismaClient } from '../../generated/prisma/client';
 import { createResponse } from '../utils/api-response.js';
 import { isValidVehicleMake, isValidVehicleQuantity, isValidVehiclePrice, isValidVehicleModel, isValidVehicleCategory } from '../utils/InputValidation';
 
+interface UpdateVehicleParams {
+  id: string; 
+}
+
+
 export const createVehicleController = (prisma: PrismaClient) => async (req: Request, res: Response) => {
     try {
         const { make, model, category, price, quantity } = req.body;
@@ -83,6 +88,62 @@ export const searchVehiclesController = (prisma: PrismaClient) => async (req: Re
         
     } catch (error) {
         console.error('Error in searchVehiclesController:', error);
+        res.status(500).json(createResponse(false, 'Internal server error', null));
+    }
+}
+
+export const updateVehicleController = (prisma: PrismaClient) => async (req: Request<UpdateVehicleParams>, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { make, model, category, price, quantity } = req.body;
+
+        const existingVehicle = await prisma.vehicle.findUnique({ where: { id } });
+        if(!existingVehicle) {
+            return res.status(404).json(createResponse(false, 'Vehicle not found', null));
+        }
+
+        const updateData: any = {};
+        if (make !== undefined) {
+            if(!isValidVehicleMake(make)) {
+                return res.status(400).json(createResponse(false, 'Make is required', null));
+            }
+            updateData.make = (make as string).trim();
+        }
+        if (model !== undefined) {
+            if(!isValidVehicleModel(model)) {
+                return res.status(400).json(createResponse(false, 'Model is required', null));
+            }
+            updateData.model = (model as string).trim();
+        }
+        if (category !== undefined) {
+            if(!isValidVehicleCategory(category)) {
+                return res.status(400).json(createResponse(false, 'Category is required', null));
+            }
+            updateData.category = (category as string).trim();
+        }
+        if (price !== undefined) {
+            if(!isValidVehiclePrice(price)) {
+                return res.status(400).json(createResponse(false, 'Valid price is required', null));
+            }
+            updateData.price = price;
+        }
+        if (quantity !== undefined) {
+            if(!isValidVehicleQuantity(quantity)) {
+                return res.status(400).json(createResponse(false, 'Valid quantity is required', null));
+            }
+            updateData.quantity = quantity;
+        }
+
+        const updatedVehicle = await prisma.vehicle.update({
+            where: { id },
+            data: updateData,
+        });
+
+        return res.status(200).json(createResponse(true, 'Vehicle updated successfully', updatedVehicle));
+
+
+    } catch (error) {
+        console.error('Error in updateVehicleController:', error);
         res.status(500).json(createResponse(false, 'Internal server error', null));
     }
 }
