@@ -28,10 +28,102 @@ describe('registerController', () => {
 
     await registerController(fakePrisma as any)(req, res);
 
-    assert.strictEqual(status.mock.calls[0].arguments[0], 201);
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 201);
     const body = json.mock.calls[0].arguments[0];
     assert.strictEqual(body.success, true);
     assert.strictEqual(body.data.email, 'test@example.com');
     assert.strictEqual(body.data.password, undefined);
+  });
+
+  test('returns 400 when email already exists', async () => {
+    const fakePrisma = createFakePrisma({ id: 'u-1', email: 'test@example.com' });
+    const req: any = {
+      body: { name: 'Test User', email: 'test@example.com', password: 'plainPassword123' },
+    };
+    const { res, status, json } = createMockRes();
+
+    await registerController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+    const body = json.mock.calls[0].arguments[0];
+    assert.strictEqual(body.success, false);
+    assert.match(body.message, /already exists/i);
+  });
+  describe('name validation', () => {
+    test('returns 400 when name is missing', async () => {
+      const fakePrisma = createFakePrisma(null);
+      const req: any = { body: { email: 'test@example.com', password: 'plainPassword123' } };
+      const { res, status, json } = createMockRes();
+
+      await registerController(fakePrisma as any)(req, res);
+
+      assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+      assert.match((json as any).mock.calls[0].arguments[0].message, /name/i);
+    });
+
+    test('returns 400 when name is an empty string', async () => {
+      const fakePrisma = createFakePrisma(null);
+      const req: any = {
+        body: { name: '  ', email: 'test@example.com', password: 'plainPassword123' },
+      };
+      const { res, status, json } = createMockRes();
+
+      await registerController(fakePrisma as any)(req, res);
+
+      assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+      assert.match(json.mock.calls[0].arguments[0].message, /name/i);
+    });
+  });
+
+  describe('email validation', () => {
+    test('returns 400 when email is missing', async () => {
+      const fakePrisma = createFakePrisma(null);
+      const req: any = { body: { name: 'Test User', password: 'plainPassword123' } };
+      const { res, status, json } = createMockRes();
+
+      await registerController(fakePrisma as any)(req, res);
+
+      assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+      assert.match(json.mock.calls[0].arguments[0].message, /email/i);
+    });
+
+    test('returns 400 when email format is invalid', async () => {
+      const fakePrisma = createFakePrisma(null);
+      const req: any = {
+        body: { name: 'Test User', email: 'not-an-email', password: 'plainPassword123' },
+      };
+      const { res, status, json } = createMockRes();
+
+      await registerController(fakePrisma as any)(req, res);
+
+      assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+      assert.match(json.mock.calls[0].arguments[0].message, /email/i);
+    });
+  });
+
+  describe('password validation', () => {
+    test('returns 400 when password is missing', async () => {
+      const fakePrisma = createFakePrisma(null);
+      const req: any = { body: { name: 'Test User', email: 'test@example.com' } };
+      const { res, status, json } = createMockRes();
+
+      await registerController(fakePrisma as any)(req, res);
+
+      assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+      assert.match(json.mock.calls[0].arguments[0].message, /password/i);
+    });
+
+    test('returns 400 when password is shorter than 8 characters', async () => {
+      const fakePrisma = createFakePrisma(null);
+      const req: any = {
+        body: { name: 'Test User', email: 'test@example.com', password: 'short1' },
+      };
+      const { res, status, json } = createMockRes();
+
+      await registerController(fakePrisma as any)(req, res);
+
+      assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+      assert.match(json.mock.calls[0].arguments[0].message, /password/i);
+    });
   });
 });
