@@ -165,4 +165,30 @@ describe('Vehicle routes', () => {
       assert.strictEqual(response.status, 401);
     });
   });
+
+  describe('POST /api/vehicles/:id/purchase', () => {
+    let vehicleId: string;
+    before(async () => {
+      const createRes = await request(app)
+        .post('/api/vehicles')
+        .set('Authorization', `Bearer ${token}`)
+        .send({ make: 'RouterTestMake', model: 'PurchaseModel', category: 'SUV', price: 30000, quantity: 5 });
+      vehicleId = createRes.body.data.id;
+    });
+
+    after(async () => {
+      await prisma.vehicle.deleteMany({ where: { id: vehicleId } });
+    });
+
+    test('POST /api/vehicles/:id/purchase decrements quantity when authenticated', async () => {
+      const response = await request(app)
+        .post(`/api/vehicles/${vehicleId}/purchase`)
+        .set('Authorization', `Bearer ${token}`)
+        .send({ quantity: 2 });
+    
+      assert.strictEqual(response.status, 200);
+      assert.strictEqual(response.body.data.quantity, 3);
+    });
+
+  });
 });

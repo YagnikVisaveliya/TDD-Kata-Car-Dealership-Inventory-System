@@ -162,3 +162,35 @@ export const deleteVehicleController = (prisma: PrismaClient) => async (req: Req
         res.status(500).json(createResponse(false, 'Internal server error', null));
     }
 }
+
+export const purchaseVehicleController = (prisma: PrismaClient) => async (req: Request<UpdateVehicleParams>, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { quantity } = req.body;
+        if (quantity === undefined || typeof quantity !== 'number' || isNaN(quantity) || quantity <= 0) {
+        return res.status(400).json(createResponse(false, 'Quantity must be a positive number', null));
+        }
+
+        const vehicle = await prisma.vehicle.findUnique({ where: { id } });
+        if (!vehicle) {
+        return res.status(404).json(createResponse(false, 'Vehicle not found', null));
+        }
+
+        if (vehicle.quantity < quantity) {
+        return res.status(400).json(createResponse(false, 'Insufficient stock for this purchase', null));
+        }
+
+        // Atomic decrement — avoids a race condition where two purchases
+        // read the same quantity before either writes back.
+        const updated = await prisma.vehicle.update({
+        where: { id },
+        data: { quantity: { decrement: quantity } },
+        });
+
+        return res.status(200).json(createResponse(true, 'Purchase successful', updated));
+
+    } catch (error) {
+        console.error('Error in purchaseVehicleController:', error);
+        res.status(500).json(createResponse(false, 'Internal server error', null));
+    }
+}
