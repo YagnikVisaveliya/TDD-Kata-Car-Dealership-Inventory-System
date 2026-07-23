@@ -38,8 +38,8 @@ export async function deleteVehicle(id: string): Promise<void> {
   await api.delete(`/api/vehicles/${id}`);
 }
 
-export async function purchaseVehicle(id: string): Promise<Vehicle> {
-  const res = await api.post(`/api/vehicles/${id}/purchase`);
+export async function purchaseVehicle(id: string, quantity = 1): Promise<Vehicle> {
+  const res = await api.post(`/api/vehicles/${id}/purchase`, { quantity });
   return unwrapData<Vehicle>(res.data);
 }
 

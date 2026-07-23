@@ -98,7 +98,7 @@ export default function VehicleCard({
               </div>
               <button
                 onClick={handleRestock}
-                className="bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-lg transition-colors cursor-pointer h-[32px]"
+                className="bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-lg transition-colors cursor-pointer h-8"
               >
                 Restock
               </button>

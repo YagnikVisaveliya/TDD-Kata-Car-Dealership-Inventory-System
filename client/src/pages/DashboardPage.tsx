@@ -36,7 +36,7 @@ export default function DashboardPage() {
 
   async function handlePurchase(id: string) {
     try {
-      const updated = await purchaseVehicle(id);
+      const updated = await purchaseVehicle(id, 1);
       setVehicles((prev) => prev.map((v) => (v.id === id ? updated : v)));
       toast.success("Vehicle purchased!");
     } catch (err: any) {
