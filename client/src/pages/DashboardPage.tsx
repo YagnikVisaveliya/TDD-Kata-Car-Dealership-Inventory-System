@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { getVehicles, purchaseVehicle } from "../api/vehicles";
+import { getVehicles, purchaseVehicle,searchVehicles } from "../api/vehicles";
 import { useAuth } from "../context/AuthContext";
 import VehicleCard from "../components/VehicleCard";
-import type { Vehicle } from "../types/Vehicle";
+import type { Vehicle, VehicleSearchParams } from "../types/Vehicle";
 import toast from "react-hot-toast";
+import SearchBar from "../components/SearchBar";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -40,12 +41,28 @@ export default function DashboardPage() {
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleSearch(params: VehicleSearchParams) {
+  setLoading(true);
+  setError(null);
+  try {
+    const hasFilters = Object.keys(params).length > 0;
+    const data = hasFilters ? await searchVehicles(params) : await getVehicles();
+    setVehicles(data);
+  } catch (err: any) {
+    setError(err?.response?.data?.message || "Search failed");
+  } finally {
+    setLoading(false);
+  }
+}
+
+  async function handleDelete() {
     // wired once deleteVehicle admin flow is built
   }
+  
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900">
+      
       {/* Editorial Header Architecture */}
       <header className="bg-white border-b border-zinc-200/80 px-6 py-4 md:px-12 flex justify-between items-center shadow-sm shadow-zinc-100">
         <div className="flex items-center gap-3">
@@ -75,10 +92,35 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main Grid Viewport */}
-      <main className="max-w-7xl mx-auto p-6 md:p-12">
+      {/* Main Content Area */}
+      <main className="max-w-7xl mx-auto p-6 md:p-12 space-y-6">
+        
+        {/* Dynamic Section Header with Optional Admin Action Overlays */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Inventory Management</h2>
+            <p className="text-2xl font-black tracking-tight text-zinc-950 mt-0.5">Active Fleet Registry</p>
+          </div>
+          
+          {/* {isAdmin && (
+          
+            <button
+              onClick={onAddVehicleClick}
+              className="inline-flex items-center justify-center bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs uppercase tracking-widest px-4 py-3 rounded-xl shadow-lg shadow-zinc-950/10 active:scale-[0.985] transition-all cursor-pointer self-start sm:self-auto"
+            >
+              + Provision New Asset
+            </button>
+          )} */}
+        </div>
+
+        {/* Aligned Workstation Search Panel */}
+        <SearchBar 
+          onSearch={handleSearch}
+        />
+
+        {/* Global Loading Lifecycle State Indicators */}
         {loading && (
-          <div className="flex items-center justify-center py-12 gap-3">
+          <div className="flex items-center justify-center py-20 gap-3">
             <svg className="animate-spin h-5 w-5 text-zinc-950" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -94,23 +136,25 @@ export default function DashboardPage() {
         )}
 
         {!loading && !error && vehicles.length === 0 && (
-          <div className="text-center py-16 border border-dashed border-zinc-200 bg-white rounded-2xl max-w-md mx-auto">
+          <div className="text-center py-16 border border-dashed border-zinc-200 bg-white rounded-2xl max-w-md mx-auto shadow-sm">
             <p className="text-sm font-semibold text-zinc-400">No active assets registered in stock.</p>
           </div>
         )}
 
         {/* Dynamic Card Assembly Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehicles.map((v) => (
-            <VehicleCard
-              key={v.id}
-              vehicle={v}
-              onPurchase={handlePurchase}
-              isAdmin={isAdmin}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        {!loading && !error && vehicles.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {vehicles.map((v) => (
+              <VehicleCard
+                key={v.id}
+                vehicle={v}
+                onPurchase={handlePurchase}
+                isAdmin={isAdmin}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
