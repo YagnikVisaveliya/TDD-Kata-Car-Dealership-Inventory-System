@@ -176,7 +176,7 @@ export default function DashboardPage() {
         {/* Responsive Grid: Left Sidebar (Filters) + Right Content (Cars Matrix) */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
           {/* Left Sidebar: Search & Filter Panel */}
-          <aside className="lg:col-span-1 space-y-4">
+          <aside className="lg:col-span-1 lg:sticky lg:top-24 self-start space-y-4">
             <SearchBar vehicles={allVehicles} onSearch={handleSearch} />
           </aside>
 
@@ -226,7 +226,7 @@ export default function DashboardPage() {
 
             {/* Vehicle Grid */}
             {!loading && !error && vehicles.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {vehicles.map((v) => (
                   <VehicleCard
                     key={v.id}

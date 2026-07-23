@@ -1,8 +1,14 @@
-import { useEffect, useState, useMemo } from "react";
-import type { Vehicle, VehicleSearchParams } from "../types/Vehicle";
+import { useState, useEffect } from "react";
+import type { Vehicle } from "../types/Vehicle";
 
 interface SearchBarProps {
-  onSearch: (params: VehicleSearchParams) => void;
+  onSearch: (filters: {
+    make?: string;
+    model?: string;
+    category?: string;
+    minPrice?: number;
+    maxPrice?: number;
+  }) => void;
   vehicles?: Vehicle[];
 }
 
@@ -13,78 +19,52 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
 
-  // Extract unique available Makes from vehicles dataset
-  const availableMakes = useMemo(() => {
-    const set = new Set<string>();
-    vehicles.forEach((v) => {
-      if (v.make) set.add(v.make);
-    });
-    return Array.from(set).sort();
-  }, [vehicles]);
+  const availableMakes = Array.from(
+    new Set(vehicles.map((v) => v.make).filter(Boolean))
+  ).sort();
 
-  // Extract unique available Models based on currently selected Make
-  const availableModels = useMemo(() => {
-    const set = new Set<string>();
-    const selectedMakeClean = make.trim().toLowerCase();
-    
-    vehicles.forEach((v) => {
-      if (!selectedMakeClean || v.make.toLowerCase() === selectedMakeClean) {
-        if (v.model) set.add(v.model);
-      }
-    });
-    return Array.from(set).sort();
-  }, [vehicles, make]);
+  const filteredVehiclesByMake = make.trim()
+    ? vehicles.filter((v) => v.make.toLowerCase() === make.trim().toLowerCase())
+    : vehicles;
 
-  // Extract unique Categories
-  const availableCategories = useMemo(() => {
-    const set = new Set<string>();
-    vehicles.forEach((v) => {
-      if (v.category) set.add(v.category);
-    });
-    return Array.from(set).sort();
-  }, [vehicles]);
+  const availableModels = Array.from(
+    new Set(filteredVehiclesByMake.map((v) => v.model).filter(Boolean))
+  ).sort();
 
-  // Reset model if current model does not belong to newly selected make
+  const availableCategories = Array.from(
+    new Set(vehicles.map((v) => v.category).filter(Boolean))
+  ).sort();
+
   useEffect(() => {
-    if (make && model && availableModels.length > 0) {
-      const isModelValid = availableModels.some(
-        (m) => m.toLowerCase() === model.trim().toLowerCase()
-      );
-      if (!isModelValid) {
-        setModel("");
-      }
+    if (
+      model.trim() &&
+      availableModels.length > 0 &&
+      !availableModels.some((m) => m.toLowerCase() === model.trim().toLowerCase())
+    ) {
+      setModel("");
     }
   }, [make, availableModels, model]);
 
-  // Debounced search trigger with 1-character search ignore rule
   useEffect(() => {
     const timer = setTimeout(() => {
-      const params: VehicleSearchParams = {};
+      const activeMake = make.trim().length >= 2 ? make.trim() : undefined;
+      const activeModel = model.trim().length >= 2 ? model.trim() : undefined;
+      const activeCategory = category.trim().length >= 2 ? category.trim() : undefined;
 
-      const cleanMake = make.trim();
-      const cleanModel = model.trim();
-      const cleanCategory = category.trim();
-
-      // Rule: Ignore single-character searches (must be >= 2 chars)
-      if (cleanMake.length >= 2) params.make = cleanMake;
-      if (cleanModel.length >= 2) params.model = cleanModel;
-      if (cleanCategory.length >= 2) params.category = cleanCategory;
-
-      if (minPrice !== "" && !isNaN(Number(minPrice))) {
-        params.minPrice = Number(minPrice);
-      }
-      if (maxPrice !== "" && !isNaN(Number(maxPrice))) {
-        params.maxPrice = Number(maxPrice);
-      }
-
-      onSearch(params);
-    }, 400);
+      onSearch({
+        make: activeMake,
+        model: activeModel,
+        category: activeCategory,
+        minPrice: minPrice ? Number(minPrice) : undefined,
+        maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      });
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [make, model, category, minPrice, maxPrice, onSearch]);
 
   const hasActiveFilters = Boolean(
-    make || model || category || minPrice || maxPrice
+    make.trim() || model.trim() || category.trim() || minPrice || maxPrice
   );
 
   const handleReset = () => {
@@ -100,7 +80,7 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
   const showCategoryHint = category.trim().length === 1;
 
   return (
-    <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-sm space-y-5">
+    <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-sm space-y-4">
       <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
@@ -112,7 +92,7 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
           <button
             type="button"
             onClick={handleReset}
-            className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline transition-all cursor-pointer"
+            className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline transition-all cursor-pointer"
           >
             Reset All
           </button>
@@ -129,7 +109,7 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
             Make
           </label>
           {availableMakes.length > 0 && (
-            <span className="text-[10px] font-semibold text-zinc-400">
+            <span className="text-xs font-semibold text-zinc-400">
               {availableMakes.length} makes
             </span>
           )}
@@ -151,7 +131,7 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
           </datalist>
         </div>
         {showMakeHint && (
-          <p className="text-[11px] font-medium text-amber-600 flex items-center gap-1 mt-1">
+          <p className="text-xs font-medium text-amber-600 flex items-center gap-1 mt-1">
             <span>ℹ️</span> Type at least 2 characters to search make
           </p>
         )}
@@ -167,7 +147,7 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
             Model {make.trim().length >= 2 && <span className="text-amber-600 font-bold lowercase">({make})</span>}
           </label>
           {availableModels.length > 0 && (
-            <span className="text-[10px] font-semibold text-zinc-400">
+            <span className="text-xs font-semibold text-zinc-400">
               {availableModels.length} models
             </span>
           )}
@@ -193,11 +173,11 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
           </datalist>
         </div>
         {showModelHint ? (
-          <p className="text-[11px] font-medium text-amber-600 flex items-center gap-1 mt-1">
+          <p className="text-xs font-medium text-amber-600 flex items-center gap-1 mt-1">
             <span>ℹ️</span> Type at least 2 characters to search model
           </p>
         ) : make.trim().length >= 2 && availableModels.length > 0 ? (
-          <p className="text-[10px] font-medium text-zinc-500">
+          <p className="text-xs font-medium text-zinc-500">
             Showing models matching make <strong className="text-zinc-800">{make}</strong>
           </p>
         ) : null}
@@ -228,7 +208,7 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
           </datalist>
         </div>
         {showCategoryHint && (
-          <p className="text-[11px] font-medium text-amber-600 flex items-center gap-1 mt-1">
+          <p className="text-xs font-medium text-amber-600 flex items-center gap-1 mt-1">
             <span>ℹ️</span> Type at least 2 characters to search category
           </p>
         )}
@@ -243,7 +223,7 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
           <div>
             <label
               htmlFor="search-min-price"
-              className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1"
+              className="block text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1"
             >
               Min Price
             </label>
@@ -260,7 +240,7 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
           <div>
             <label
               htmlFor="search-max-price"
-              className="block text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1"
+              className="block text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1"
             >
               Max Price
             </label>

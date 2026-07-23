@@ -3,11 +3,17 @@ import type { Vehicle } from "../types/Vehicle";
 
 interface VehicleFormProps {
   vehicle?: Vehicle;
-  onSubmit: (payload: Omit<Vehicle, "id">) => void;
+  onSubmit: (payload: Omit<Vehicle, "id">) => Promise<void> | void;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
-export default function VehicleForm({ vehicle, onSubmit, onCancel }: VehicleFormProps) {
+export default function VehicleForm({
+  vehicle,
+  onSubmit,
+  onCancel,
+  isSubmitting = false,
+}: VehicleFormProps) {
   const isEdit = Boolean(vehicle);
 
   const [make, setMake] = useState(vehicle?.make ?? "");
@@ -15,21 +21,29 @@ export default function VehicleForm({ vehicle, onSubmit, onCancel }: VehicleForm
   const [category, setCategory] = useState(vehicle?.category ?? "");
   const [price, setPrice] = useState(vehicle?.price?.toString() ?? "");
   const [quantity, setQuantity] = useState(vehicle?.quantity?.toString() ?? "");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  const loading = isSubmitting || submitting;
+
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    onSubmit({
-      make,
-      model,
-      category,
-      price: Number(price),
-      quantity: Number(quantity),
-    });
+    setSubmitting(true);
+    try {
+      await onSubmit({
+        make,
+        model,
+        category,
+        price: Number(price),
+        quantity: Number(quantity),
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
-    <form 
-      onSubmit={handleSubmit} 
+    <form
+      onSubmit={handleSubmit}
       className="bg-white border border-zinc-200/80 rounded-3xl p-8 shadow-xl shadow-zinc-200/50 space-y-5 max-w-md w-full"
     >
       <div className="space-y-1.5 pb-2">
@@ -52,7 +66,8 @@ export default function VehicleForm({ vehicle, onSubmit, onCancel }: VehicleForm
           value={make}
           onChange={(e) => setMake(e.target.value)}
           required
-          className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 transition-all placeholder-zinc-400"
+          disabled={loading}
+          className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 transition-all placeholder-zinc-400 disabled:opacity-60"
           placeholder="e.g., Porsche"
         />
       </div>
@@ -67,7 +82,8 @@ export default function VehicleForm({ vehicle, onSubmit, onCancel }: VehicleForm
           value={model}
           onChange={(e) => setModel(e.target.value)}
           required
-          className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 transition-all placeholder-zinc-400"
+          disabled={loading}
+          className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 transition-all placeholder-zinc-400 disabled:opacity-60"
           placeholder="e.g., 911 GT3"
         />
       </div>
@@ -82,7 +98,8 @@ export default function VehicleForm({ vehicle, onSubmit, onCancel }: VehicleForm
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           required
-          className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 transition-all placeholder-zinc-400"
+          disabled={loading}
+          className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 transition-all placeholder-zinc-400 disabled:opacity-60"
           placeholder="e.g., Sports Car"
         />
       </div>
@@ -99,7 +116,8 @@ export default function VehicleForm({ vehicle, onSubmit, onCancel }: VehicleForm
             onChange={(e) => setPrice(e.target.value)}
             required
             min={0}
-            className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 transition-all placeholder-zinc-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            disabled={loading}
+            className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 transition-all placeholder-zinc-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-60"
             placeholder="160000"
           />
         </div>
@@ -115,7 +133,8 @@ export default function VehicleForm({ vehicle, onSubmit, onCancel }: VehicleForm
             onChange={(e) => setQuantity(e.target.value)}
             required
             min={0}
-            className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 transition-all placeholder-zinc-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            disabled={loading}
+            className="w-full bg-zinc-50 border border-zinc-200 text-zinc-900 rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-zinc-950/10 focus:border-zinc-950 transition-all placeholder-zinc-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-60"
             placeholder="5"
           />
         </div>
@@ -124,14 +143,26 @@ export default function VehicleForm({ vehicle, onSubmit, onCancel }: VehicleForm
       <div className="flex gap-3 pt-3">
         <button
           type="submit"
-          className="flex-1 bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs uppercase tracking-widest py-3 rounded-xl transition-all shadow-lg shadow-zinc-950/10 active:scale-[0.985] cursor-pointer"
+          disabled={loading}
+          className="flex-1 bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs uppercase tracking-widest py-3 rounded-xl transition-all shadow-lg shadow-zinc-950/10 active:scale-[0.985] disabled:opacity-75 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
         >
-          {isEdit ? "Update Vehicle" : "Add Vehicle"}
+          {loading ? (
+            <>
+              <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              <span>{isEdit ? "Updating..." : "Saving..."}</span>
+            </>
+          ) : (
+            <span>{isEdit ? "Update Vehicle" : "Add Vehicle"}</span>
+          )}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 bg-white border border-zinc-200 text-zinc-800 text-xs font-bold py-3 rounded-xl hover:bg-zinc-50 transition-colors cursor-pointer"
+          disabled={loading}
+          className="flex-1 bg-white border border-zinc-200 text-zinc-800 text-xs font-bold py-3 rounded-xl hover:bg-zinc-50 transition-colors cursor-pointer disabled:opacity-60"
         >
           Cancel
         </button>
