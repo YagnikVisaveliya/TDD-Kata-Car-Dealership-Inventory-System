@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
-import { getVehicles, purchaseVehicle, searchVehicles, addVehicle, updateVehicle, deleteVehicle, restockVehicle } from "../api/vehicles";
+import {
+  getVehicles,
+  purchaseVehicle,
+  searchVehicles,
+  addVehicle,
+  updateVehicle,
+  deleteVehicle,
+  restockVehicle,
+} from "../api/vehicles";
 import { useAuth } from "../context/AuthContext";
 import VehicleCard from "../components/VehicleCard";
-import type { Vehicle, VehicleSearchParams } from "../types/Vehicle";
+import type { Vehicle, VehicleSearchParams, PaginationInfo } from "../types/Vehicle";
 import toast from "react-hot-toast";
 import SearchBar from "../components/SearchBar";
 import VehicleForm from "../components/VehicleForm";
+import Pagination from "../components/Pagination";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
@@ -18,31 +27,49 @@ export default function DashboardPage() {
   const [purchasingVehicleId, setPurchasingVehicleId] = useState<string | null>(null);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(9);
+  const [paginationInfo, setPaginationInfo] = useState<PaginationInfo | null>(null);
+  const [currentSearchParams, setCurrentSearchParams] = useState<VehicleSearchParams | null>(null);
+
   const isAdmin = user?.role === "ADMIN";
 
-  async function loadVehicles() {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getVehicles();
-      setAllVehicles(data);
-      setVehicles(data);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Failed to load vehicles");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const loadVehicles = useCallback(
+    async (page = currentPage, limit = pageSize, filters = currentSearchParams) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const hasFilters = filters && Object.keys(filters).length > 0;
+        const res = hasFilters
+          ? await searchVehicles(filters, page, limit)
+          : await getVehicles(page, limit);
+
+        setVehicles(res.vehicles);
+        setPaginationInfo(res.pagination);
+
+        // Fetch non-paginated sample for search autocomplete if needed
+        if (allVehicles.length === 0 && res.vehicles.length > 0) {
+          setAllVehicles(res.vehicles);
+        }
+      } catch (err: any) {
+        setError(err?.response?.data?.message || "Failed to load vehicles");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentPage, pageSize, currentSearchParams, allVehicles.length]
+  );
 
   useEffect(() => {
-    loadVehicles();
-  }, []);
+    loadVehicles(currentPage, pageSize, currentSearchParams);
+  }, [currentPage, pageSize, currentSearchParams]);
 
   async function handlePurchase(id: string) {
     setPurchasingVehicleId(id);
     try {
       await purchaseVehicle(id, 1);
-      await loadVehicles();
+      await loadVehicles(currentPage, pageSize, currentSearchParams);
       toast.success("Vehicle purchased!");
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Purchase failed");
@@ -51,37 +78,25 @@ export default function DashboardPage() {
     }
   }
 
-  const handleSearch = useCallback(async (params: VehicleSearchParams) => {
-    setLoading(true);
-    setError(null);
+  const handleSearch = useCallback((params: VehicleSearchParams) => {
     const filterKeys = Object.keys(params);
     setActiveFiltersCount(filterKeys.length);
-    try {
-      const hasFilters = filterKeys.length > 0;
-      const data = hasFilters ? await searchVehicles(params) : await getVehicles();
-      setVehicles(data);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || "Search failed");
-    } finally {
-      setLoading(false);
-    }
+    setCurrentSearchParams(filterKeys.length > 0 ? params : null);
+    setCurrentPage(1);
   }, []);
 
   async function handleFormSubmit(payload: Omit<Vehicle, "id">) {
     try {
       if (editingVehicle) {
-        const updated = await updateVehicle(editingVehicle.id, payload);
-        setVehicles((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
-        setAllVehicles((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
+        await updateVehicle(editingVehicle.id, payload);
         toast.success("Vehicle updated");
       } else {
-        const created = await addVehicle(payload);
-        setVehicles((prev) => [...prev, created]);
-        setAllVehicles((prev) => [...prev, created]);
+        await addVehicle(payload);
         toast.success("Vehicle added");
       }
       setShowForm(false);
       setEditingVehicle(undefined);
+      await loadVehicles(currentPage, pageSize, currentSearchParams);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Save failed");
     }
@@ -90,9 +105,8 @@ export default function DashboardPage() {
   async function handleDelete(id: string) {
     try {
       await deleteVehicle(id);
-      setVehicles((prev) => prev.filter((v) => v.id !== id));
-      setAllVehicles((prev) => prev.filter((v) => v.id !== id));
       toast.success("Vehicle deleted");
+      await loadVehicles(currentPage, pageSize, currentSearchParams);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Delete failed");
     }
@@ -105,14 +119,22 @@ export default function DashboardPage() {
 
   async function handleRestock(id: string, quantity: number) {
     try {
-      const updated = await restockVehicle(id, quantity);
-      setVehicles((prev) => prev.map((v) => (v.id === id ? updated : v)));
-      setAllVehicles((prev) => prev.map((v) => (v.id === id ? updated : v)));
+      await restockVehicle(id, quantity);
       toast.success("Vehicle restocked");
+      await loadVehicles(currentPage, pageSize, currentSearchParams);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Restock failed");
     }
   }
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 relative">
@@ -187,6 +209,11 @@ export default function DashboardPage() {
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold uppercase tracking-widest text-zinc-500">
                   Showing: <strong className="text-zinc-950">{vehicles.length}</strong> Vehicle{vehicles.length !== 1 ? "s" : ""}
+                  {paginationInfo && paginationInfo.total > 0 && (
+                    <span className="normal-case text-zinc-400 font-medium ml-1">
+                      (Total {paginationInfo.total})
+                    </span>
+                  )}
                 </span>
                 {activeFiltersCount > 0 && (
                   <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -240,6 +267,19 @@ export default function DashboardPage() {
                   />
                 ))}
               </div>
+            )}
+
+            {/* Pagination Component */}
+            {!loading && !error && paginationInfo && paginationInfo.totalPages > 1 && (
+              <Pagination
+                currentPage={paginationInfo.page}
+                totalPages={paginationInfo.totalPages}
+                totalItems={paginationInfo.total}
+                pageSize={paginationInfo.limit}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                disabled={loading}
+              />
             )}
           </section>
         </div>

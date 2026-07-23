@@ -14,3 +14,15 @@ export interface VehicleSearchParams {
   minPrice?: number;
   maxPrice?: number;
 }
+
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface PaginatedVehiclesResponse {
+  vehicles: Vehicle[];
+  pagination: PaginationInfo;
+}

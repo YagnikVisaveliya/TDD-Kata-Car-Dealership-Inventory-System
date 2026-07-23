@@ -45,20 +45,39 @@ const sampleVehicle = {
 describe("vehicles api", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("fetches all vehicles", async () => {
-    mockGet.mockResolvedValue({ data: [sampleVehicle] });
-    const result = await getVehicles();
-    expect(mockGet).toHaveBeenCalledWith("/api/vehicles");
-    expect(result).toEqual([sampleVehicle]);
+  it("fetches paginated vehicles with page and limit params", async () => {
+    const paginatedResponse = {
+      vehicles: [sampleVehicle],
+      pagination: { page: 2, limit: 9, total: 15, totalPages: 2 },
+    };
+    mockGet.mockResolvedValue({ data: { data: paginatedResponse } });
+
+    const result = await getVehicles(2, 9);
+    expect(mockGet).toHaveBeenCalledWith("/api/vehicles", {
+      params: { page: 2, limit: 9 },
+    });
+    expect(result).toEqual(paginatedResponse);
   });
 
-  it("searches vehicles with query params", async () => {
+  it("handles fallback array for getVehicles", async () => {
     mockGet.mockResolvedValue({ data: [sampleVehicle] });
-    const result = await searchVehicles({ make: "Toyota", minPrice: 10000 });
+    const result = await getVehicles();
+    expect(result.vehicles).toEqual([sampleVehicle]);
+    expect(result.pagination.total).toBe(1);
+  });
+
+  it("searches vehicles with query and pagination params", async () => {
+    const paginatedResponse = {
+      vehicles: [sampleVehicle],
+      pagination: { page: 1, limit: 9, total: 1, totalPages: 1 },
+    };
+    mockGet.mockResolvedValue({ data: { data: paginatedResponse } });
+
+    const result = await searchVehicles({ make: "Toyota", minPrice: 10000 }, 1, 9);
     expect(mockGet).toHaveBeenCalledWith("/api/vehicles/search", {
-      params: { make: "Toyota", minPrice: 10000 },
+      params: { make: "Toyota", minPrice: 10000, page: 1, limit: 9 },
     });
-    expect(result).toEqual([sampleVehicle]);
+    expect(result).toEqual(paginatedResponse);
   });
 
   it("adds a new vehicle", async () => {
