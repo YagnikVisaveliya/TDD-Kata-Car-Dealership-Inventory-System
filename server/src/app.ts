@@ -1,6 +1,7 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import authRoutes from './routes/auth.route.js';
 import vehicleRoutes from './routes/vehicle.routes.js';
+import { createResponse } from './utils/api-response.js';
 
 const app = express();
 
@@ -24,6 +25,15 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-  app.use('/api/vehicles', vehicleRoutes);
+app.use('/api/vehicles', vehicleRoutes);
+
+app.use((_req: Request, res: Response) => {
+  res.status(404).json(createResponse(false, 'Route not found', null));
+});
+
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json(createResponse(false, 'Internal server error', null));
+});
 
 export { app };

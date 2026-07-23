@@ -22,3 +22,11 @@ test('OPTIONS requests receive CORS headers', async () => {
   assert.match(response.headers['access-control-allow-methods'], /POST/);
   assert.match(response.headers['access-control-allow-headers'], /Content-Type/i);
 });
+
+test('GET /api/nonexistent-route returns 404 with JSON error response', async () => {
+  const response = await request(app).get('/api/nonexistent-route');
+
+  assert.strictEqual(response.status, 404);
+  assert.strictEqual(response.body.success, false);
+  assert.match(response.body.message, /not found/i);
+});
