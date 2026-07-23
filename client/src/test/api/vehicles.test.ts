@@ -20,7 +20,10 @@ const { mockGet, mockPost, mockPut, mockDelete, mockCreate } = vi.hoisted(() => 
     post: mockPost,
     put: mockPut,
     delete: mockDelete,
-    interceptors: { request: { use: mockInterceptorUse } },
+    interceptors: {
+      request: { use: mockInterceptorUse },
+      response: { use: mockInterceptorUse },
+    },
   }));
   return { mockGet, mockPost, mockPut, mockDelete, mockCreate, mockInterceptorUse };
 });

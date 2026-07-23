@@ -10,6 +10,9 @@ const { mockPost, mockCreate } = vi.hoisted(() => {
       request: {
         use: mockInterceptorUse,
       },
+      response: {
+        use: mockInterceptorUse,
+      },
     },
   }));
 
