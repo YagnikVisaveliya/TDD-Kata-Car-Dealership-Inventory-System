@@ -37,31 +37,10 @@ export async function getVehicles(
 }
 
 export async function searchVehicles(
-  params: VehicleSearchParams,
-  page?: number,
-  limit?: number
-): Promise<PaginatedVehiclesResponse> {
-  const queryParams: Record<string, unknown> = { ...params };
-  if (page !== undefined) queryParams.page = page;
-  if (limit !== undefined) queryParams.limit = limit;
-
-  const res = await api.get("/api/vehicles/search", { params: queryParams });
-  const data = unwrapData<any>(res.data);
-
-  if (data && typeof data === "object" && "vehicles" in data && "pagination" in data) {
-    return data as PaginatedVehiclesResponse;
-  }
-
-  const vehiclesList = Array.isArray(data) ? data : [];
-  return {
-    vehicles: vehiclesList,
-    pagination: {
-      page: page || 1,
-      limit: limit || vehiclesList.length || 9,
-      total: vehiclesList.length,
-      totalPages: 1,
-    },
-  };
+  params: VehicleSearchParams
+): Promise<Vehicle[]> {
+  const res = await api.get("/api/vehicles/search", { params });
+  return unwrapData<Vehicle[]>(res.data);
 }
 
 export async function addVehicle(

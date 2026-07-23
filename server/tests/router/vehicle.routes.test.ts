@@ -103,8 +103,8 @@ describe('Vehicle routes', () => {
     .set('Authorization', `Bearer ${token}`);
 
     assert.strictEqual(response.status, 200);
-    assert.ok(response.body.data.vehicles.length >= 1);
-    assert.strictEqual(response.body.data.vehicles[0].make, 'RouterTestMake');
+    assert.ok(response.body.data.length >= 1);
+    assert.strictEqual(response.body.data[0].make, 'RouterTestMake');
     });
 
     test('GET /api/vehicles/search returns 401 when no token is provided', async () => {

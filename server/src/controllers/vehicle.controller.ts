@@ -99,7 +99,7 @@ export const getVehiclesController = (prisma: PrismaClient) => async (req: Reque
 
 export const searchVehiclesController = (prisma: PrismaClient) => async (req: Request, res: Response) => {
     try {
-        const { make, model, category, minPrice, maxPrice, page: pageQuery, limit: limitQuery } = req.query;
+        const { make, model, category, minPrice, maxPrice } = req.query;
         const filters: any = {};
 
         if (make) filters.make = { contains: String(make), mode: 'insensitive' };
@@ -125,28 +125,9 @@ export const searchVehiclesController = (prisma: PrismaClient) => async (req: Re
                 filters.price.lte = max;
             }
         }
-        const pagination = parsePagination({ page: pageQuery, limit: limitQuery });
-            if (!pagination.valid) {
-            return res.status(400).json(createResponse(false, pagination.message, null));
-        }
-        const { page, limit } = pagination;
-        const skip = (page - 1) * limit;
 
-        const [vehicles, total] = await Promise.all([
-        prisma.vehicle.findMany({ where: filters, skip, take: limit }),
-        prisma.vehicle.count({ where: filters }),
-        ]);
-        return res.status(200).json(
-        createResponse(true, 'Search results retrieved successfully', {
-            vehicles,
-            pagination: {
-            page,
-            limit,
-            total,
-            totalPages: Math.ceil(total / limit) || 0,
-            },
-        })
-        );
+        const vehicles = await prisma.vehicle.findMany({ where: filters });
+        return res.status(200).json(createResponse(true, 'Search results retrieved successfully', vehicles));
         
     } catch (error) {
         console.error('Error in searchVehiclesController:', error);

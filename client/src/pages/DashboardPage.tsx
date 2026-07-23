@@ -35,22 +35,29 @@ export default function DashboardPage() {
 
   const isAdmin = user?.role === "ADMIN";
 
+  const fetchAllVehiclesForSearch = useCallback(async () => {
+    try {
+      const fullList = await searchVehicles({});
+      setAllVehicles(fullList);
+    } catch {
+      // Ignore background fetch failure
+    }
+  }, []);
+
   const loadVehicles = useCallback(
     async (page = currentPage, limit = pageSize, filters = currentSearchParams) => {
       setLoading(true);
       setError(null);
       try {
         const hasFilters = filters && Object.keys(filters).length > 0;
-        const res = hasFilters
-          ? await searchVehicles(filters, page, limit)
-          : await getVehicles(page, limit);
-
-        setVehicles(res.vehicles);
-        setPaginationInfo(res.pagination);
-
-        // Fetch non-paginated sample for search autocomplete if needed
-        if (allVehicles.length === 0 && res.vehicles.length > 0) {
-          setAllVehicles(res.vehicles);
+        if (hasFilters) {
+          const searchResults = await searchVehicles(filters);
+          setVehicles(searchResults);
+          setPaginationInfo(null);
+        } else {
+          const res = await getVehicles(page, limit);
+          setVehicles(res.vehicles);
+          setPaginationInfo(res.pagination);
         }
       } catch (err: any) {
         setError(err?.response?.data?.message || "Failed to load vehicles");
@@ -58,8 +65,12 @@ export default function DashboardPage() {
         setLoading(false);
       }
     },
-    [currentPage, pageSize, currentSearchParams, allVehicles.length]
+    [currentPage, pageSize, currentSearchParams]
   );
+
+  useEffect(() => {
+    fetchAllVehiclesForSearch();
+  }, [fetchAllVehiclesForSearch]);
 
   useEffect(() => {
     loadVehicles(currentPage, pageSize, currentSearchParams);
@@ -96,7 +107,10 @@ export default function DashboardPage() {
       }
       setShowForm(false);
       setEditingVehicle(undefined);
-      await loadVehicles(currentPage, pageSize, currentSearchParams);
+      await Promise.all([
+        loadVehicles(currentPage, pageSize, currentSearchParams),
+        fetchAllVehiclesForSearch(),
+      ]);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Save failed");
     }
@@ -106,7 +120,10 @@ export default function DashboardPage() {
     try {
       await deleteVehicle(id);
       toast.success("Vehicle deleted");
-      await loadVehicles(currentPage, pageSize, currentSearchParams);
+      await Promise.all([
+        loadVehicles(currentPage, pageSize, currentSearchParams),
+        fetchAllVehiclesForSearch(),
+      ]);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Delete failed");
     }
@@ -121,7 +138,10 @@ export default function DashboardPage() {
     try {
       await restockVehicle(id, quantity);
       toast.success("Vehicle restocked");
-      await loadVehicles(currentPage, pageSize, currentSearchParams);
+      await Promise.all([
+        loadVehicles(currentPage, pageSize, currentSearchParams),
+        fetchAllVehiclesForSearch(),
+      ]);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Restock failed");
     }

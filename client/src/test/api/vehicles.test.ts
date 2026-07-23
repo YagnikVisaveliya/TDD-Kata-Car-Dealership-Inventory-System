@@ -66,18 +66,14 @@ describe("vehicles api", () => {
     expect(result.pagination.total).toBe(1);
   });
 
-  it("searches vehicles with query and pagination params", async () => {
-    const paginatedResponse = {
-      vehicles: [sampleVehicle],
-      pagination: { page: 1, limit: 9, total: 1, totalPages: 1 },
-    };
-    mockGet.mockResolvedValue({ data: { data: paginatedResponse } });
+  it("searches vehicles with query params", async () => {
+    mockGet.mockResolvedValue({ data: [sampleVehicle] });
 
-    const result = await searchVehicles({ make: "Toyota", minPrice: 10000 }, 1, 9);
+    const result = await searchVehicles({ make: "Toyota", minPrice: 10000 });
     expect(mockGet).toHaveBeenCalledWith("/api/vehicles/search", {
-      params: { make: "Toyota", minPrice: 10000, page: 1, limit: 9 },
+      params: { make: "Toyota", minPrice: 10000 },
     });
-    expect(result).toEqual(paginatedResponse);
+    expect(result).toEqual([sampleVehicle]);
   });
 
   it("adds a new vehicle", async () => {
