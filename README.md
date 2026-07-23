@@ -5,6 +5,15 @@ A full-stack inventory management system for a car dealership, built for the **I
 Built test-first throughout, following the **Red → Green → Refactor** workflow across both the backend and frontend.
 
 ---
+## Admin Credentials
+
+Use the following credentials to log in as an administrator:
+
+**Email:** yagnik@gmail.com
+
+**Password:** 12345678
+
+---
 
 ## Tech Stack
 
