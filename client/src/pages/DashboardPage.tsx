@@ -1,16 +1,19 @@
-import { useEffect, useState } from "react";
-import { getVehicles, purchaseVehicle,searchVehicles } from "../api/vehicles";
+import { useCallback, useEffect, useState } from "react";
+import { getVehicles, purchaseVehicle,searchVehicles, addVehicle, updateVehicle, deleteVehicle } from "../api/vehicles";
 import { useAuth } from "../context/AuthContext";
 import VehicleCard from "../components/VehicleCard";
 import type { Vehicle, VehicleSearchParams } from "../types/Vehicle";
 import toast from "react-hot-toast";
 import SearchBar from "../components/SearchBar";
+import VehicleForm from "../components/VehicleForm";
 
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | undefined>(undefined);
 
   const isAdmin = user?.role === "ADMIN";
 
@@ -41,29 +44,56 @@ export default function DashboardPage() {
     }
   }
 
-  async function handleSearch(params: VehicleSearchParams) {
-  setLoading(true);
-  setError(null);
+  const handleSearch = useCallback(async (params: VehicleSearchParams) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const hasFilters = Object.keys(params).length > 0;
+      const data = hasFilters ? await searchVehicles(params) : await getVehicles();
+      setVehicles(data);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Search failed");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+async function handleFormSubmit(payload: Omit<Vehicle, "id">) {
   try {
-    const hasFilters = Object.keys(params).length > 0;
-    const data = hasFilters ? await searchVehicles(params) : await getVehicles();
-    setVehicles(data);
+    if (editingVehicle) {
+      const updated = await updateVehicle(editingVehicle.id, payload);
+      setVehicles((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
+      toast.success("Vehicle updated");
+    } else {
+      const created = await addVehicle(payload);
+      setVehicles((prev) => [...prev, created]);
+      toast.success("Vehicle added");
+    }
+    setShowForm(false);
+    setEditingVehicle(undefined);
   } catch (err: any) {
-    setError(err?.response?.data?.message || "Search failed");
-  } finally {
-    setLoading(false);
+    toast.error(err?.response?.data?.message || "Save failed");
   }
 }
 
-  async function handleDelete() {
-    // wired once deleteVehicle admin flow is built
+async function handleDelete(id: string) {
+  try {
+    await deleteVehicle(id);
+    setVehicles((prev) => prev.filter((v) => v.id !== id));
+    toast.success("Vehicle deleted");
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || "Delete failed");
   }
-  
+}
+
+function handleEdit(vehicle: Vehicle) {
+  setEditingVehicle(vehicle);
+  setShowForm(true);
+}
 
   return (
-    <div className="min-h-screen bg-zinc-50 text-zinc-900">
-      
-      {/* Editorial Header Architecture */}
+    <div className="min-h-screen bg-zinc-50 text-zinc-900 relative">
+
       <header className="bg-white border-b border-zinc-200/80 px-6 py-4 md:px-12 flex justify-between items-center shadow-sm shadow-zinc-100">
         <div className="flex items-center gap-3">
           <div className="h-6 w-2 bg-amber-500 rounded-full"></div>
@@ -92,33 +122,26 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Main Content Area */}
       <main className="max-w-7xl mx-auto p-6 md:p-12 space-y-6">
         
-        {/* Dynamic Section Header with Optional Admin Action Overlays */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
           <div>
             <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Inventory Management</h2>
             <p className="text-2xl font-black tracking-tight text-zinc-950 mt-0.5">Active Fleet Registry</p>
           </div>
           
-          {/* {isAdmin && (
-          
+          {isAdmin && (
             <button
-              onClick={onAddVehicleClick}
-              className="inline-flex items-center justify-center bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs uppercase tracking-widest px-4 py-3 rounded-xl shadow-lg shadow-zinc-950/10 active:scale-[0.985] transition-all cursor-pointer self-start sm:self-auto"
+              onClick={() => { setEditingVehicle(undefined); setShowForm(true); }}
+              className="bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs uppercase tracking-widest px-4 py-3 rounded-xl shadow-lg shadow-zinc-950/10 active:scale-[0.985] transition-all cursor-pointer self-start sm:self-auto"
             >
               + Provision New Asset
             </button>
-          )} */}
+          )}
         </div>
 
-        {/* Aligned Workstation Search Panel */}
-        <SearchBar 
-          onSearch={handleSearch}
-        />
+        <SearchBar onSearch={handleSearch} />
 
-        {/* Global Loading Lifecycle State Indicators */}
         {loading && (
           <div className="flex items-center justify-center py-20 gap-3">
             <svg className="animate-spin h-5 w-5 text-zinc-950" fill="none" viewBox="0 0 24 24">
@@ -141,7 +164,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Dynamic Card Assembly Grid */}
         {!loading && !error && vehicles.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {vehicles.map((v) => (
@@ -150,12 +172,26 @@ export default function DashboardPage() {
                 vehicle={v}
                 onPurchase={handlePurchase}
                 isAdmin={isAdmin}
+                onEdit={handleEdit}
                 onDelete={handleDelete}
               />
             ))}
           </div>
         )}
       </main>
+
+      {showForm && (
+        <div className="fixed inset-0 bg-zinc-950/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+          <div className="w-full max-w-md transform transition-all scale-100">
+            <VehicleForm
+                vehicle={editingVehicle}
+              onSubmit={handleFormSubmit}
+              onCancel={() => { setShowForm(false); setEditingVehicle(undefined); }}
+            />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
