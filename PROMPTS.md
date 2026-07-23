@@ -52,3 +52,8 @@ scope creep, noted the trade-off for the README.
 
 **Prompt:** "Give Test file for vehical router which contain all routes like POST ,GET ,PUT ,DELETE Vehicle,purchase Vehicle,Restock Vehicle
 **Summary:** Here is the complete, production-ready VehicleService.test.ts file based on your Vehicle schema. It uses the native node:test runner, node:assert/strict, and standard TypeScript type casting to mock the Prisma client.
+
+
+## — Project Setup Client-side
+**Prompt:** "help to setup typescript configuration for reactjs"
+**Summary:** This TypeScript configuration sets up a safe, high-performance environment for modern React projects by dividing the work between TypeScript and your build tool (like Vite or Webpack). It tells TypeScript to act strictly as a code guard—verifying browser features, automatically recognizing React components without needing manual imports, and enforcing strict type safety to catch bugs early—while completely turning off code generation so your bundler can handle the actual building process faster.
