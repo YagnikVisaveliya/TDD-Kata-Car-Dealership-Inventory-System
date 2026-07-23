@@ -1,6 +1,6 @@
 # AI Prompt History
 
-## — Project Setup
+## Session 1 — Project Setup
 
 **Prompt:** "which language is best for node:test in backend TDD node with js or node with ts"
 **Response summary:** Recommended TypeScript for type safety on typed
@@ -32,7 +32,7 @@ matching exactly what the spec.
 
 ---
 
-## TDD Workflow
+## Session 3 - TDD Workflow
 
 **Prompt:** "i do with direct controller and then middleware and routes"
 **Summary:** Decided to simplify the architecture to Controller + Service
@@ -54,7 +54,7 @@ scope creep, noted the trade-off for the README.
 **Summary:** Here is the complete, production-ready VehicleService.test.ts file based on your Vehicle schema. It uses the native node:test runner, node:assert/strict, and standard TypeScript type casting to mock the Prisma client.
 
 
-## — Project Setup Client-side
+## Session 4 — Project Setup Client-side
 **Prompt:** "help to setup typescript configuration for reactjs"
 **Summary:** This TypeScript configuration sets up a safe, high-performance environment for modern React projects by dividing the work between TypeScript and your build tool (like Vite or Webpack). It tells TypeScript to act strictly as a code guard—verifying browser features, automatically recognizing React components without needing manual imports, and enforcing strict type safety to catch bugs early—while completely turning off code generation so your bundler can handle the actual building process faster.
 
@@ -76,7 +76,7 @@ An immersive, high-contrast dark synth-wave look optimized for an advanced telem
 * **Primary Elements & Accents**: Electric cyan (`text-cyan-400`) and neon violet (`bg-gradient-to-r from-violet-600 to-indigo-600`) for active states, headers, and action inputs.
 * **System Borders**: Thin, industrial outline dividers using `border-slate-800/80`.
 
-## — Prompt for updatetion of UI
+## Session 5 — Prompt used in updatetion of UI
 
 **Prompt** "currently i have this design most of the student have same design so now i want to diff in this somethid serch in left part and right part show all cars and in search if i put single char then not search put whole name then show also i need somthing like some search in Make BMW then autometically in MODEL filter show dropdown of that make models"
 
