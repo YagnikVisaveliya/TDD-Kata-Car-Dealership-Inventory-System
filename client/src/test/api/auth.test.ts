@@ -1,21 +1,44 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import axios from "axios";
 import { login, register } from "../../api/auth";
 
-vi.mock("axios");
+const { mockPost, mockCreate } = vi.hoisted(() => {
+  const mockPost = vi.fn();
+  const mockInterceptorUse = vi.fn();
+  const mockCreate = vi.fn(() => ({
+    post: mockPost,
+    interceptors: {
+      request: {
+        use: mockInterceptorUse,
+      },
+    },
+  }));
+
+  return { mockPost, mockCreate, mockInterceptorUse };
+});
+
+vi.mock("axios", () => ({
+  default: {
+    create: mockCreate,
+    post: mockPost,
+  },
+  create: mockCreate,
+  post: mockPost,
+}));
 
 describe("auth api", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("calls login endpoint with email and password", async () => {
     const mockResponse = {
       data: { token: "abc123", user: { id: "1", name: "Alice", email: "a@b.com", role: "CUSTOMER" } },
     };
-    (axios.post as any).mockResolvedValue(mockResponse);
+    mockPost.mockResolvedValue(mockResponse);
 
     const result = await login("a@b.com", "password123");
 
-    expect(axios.post).toHaveBeenCalledWith("/api/auth/login", {
+    expect(mockPost).toHaveBeenCalledWith("/api/auth/login", {
       email: "a@b.com",
       password: "password123",
     });
@@ -26,11 +49,11 @@ describe("auth api", () => {
     const mockResponse = {
       data: { token: "xyz789", user: { id: "2", name: "Bob", email: "c@d.com", role: "CUSTOMER" } },
     };
-    (axios.post as any).mockResolvedValue(mockResponse);
+    mockPost.mockResolvedValue(mockResponse);
 
     const result = await register("Bob", "c@d.com", "password123");
 
-    expect(axios.post).toHaveBeenCalledWith("/api/auth/register", {
+    expect(mockPost).toHaveBeenCalledWith("/api/auth/register", {
       name: "Bob",
       email: "c@d.com",
       password: "password123",
