@@ -60,9 +60,9 @@ export const searchVehiclesController = (prisma: PrismaClient) => async (req: Re
         const { make, model, category, minPrice, maxPrice } = req.query;
         const filters: any = {};
 
-        if (make) filters.make = { equals: String(make), mode: 'insensitive' };
-        if (model) filters.model = { equals: String(model), mode: 'insensitive' };
-        if (category) filters.category = { equals: String(category), mode: 'insensitive' };
+        if (make) filters.make = { contains: String(make), mode: 'insensitive' };
+        if (model) filters.model = { contains: String(model), mode: 'insensitive' };
+        if (category) filters.category = { contains: String(category), mode: 'insensitive' };
 
         if (minPrice !== undefined || maxPrice !== undefined) {
             filters.price = {};

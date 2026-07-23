@@ -34,6 +34,7 @@ function getBrandLogo(make: string): string | null {
   if (m.includes("tata")) return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/tata.svg";
   if (m.includes("bentley")) return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/bentley.svg";
   if (m.includes("rolls")) return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/rollsroyce.svg";
+  if (m.includes("mg")) return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/mg.svg";
   if (m.includes("land rover")) return "https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/landrover.svg";
   return null;
 }

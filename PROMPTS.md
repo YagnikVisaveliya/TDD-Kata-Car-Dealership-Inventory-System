@@ -75,3 +75,11 @@ An immersive, high-contrast dark synth-wave look optimized for an advanced telem
 * **Atmospheric Lighting**: Radial ambient glowing nodes (`bg-violet-600/10` and `bg-cyan-600/10`) heavily blurred underneath main container components.
 * **Primary Elements & Accents**: Electric cyan (`text-cyan-400`) and neon violet (`bg-gradient-to-r from-violet-600 to-indigo-600`) for active states, headers, and action inputs.
 * **System Borders**: Thin, industrial outline dividers using `border-slate-800/80`.
+
+## — Prompt for updatetion of UI
+
+**Prompt** "currently i have this design most of the student have same design so now i want to diff in this somethid serch in left part and right part show all cars and in search if i put single char then not search put whole name then show also i need somthing like some search in Make BMW then autometically in MODEL filter show dropdown of that make models"
+
+**Prompt** "when too many vehicle that time not perfect i need to stable serch in whole right side and in vehicle card i need to update Restock button when click on button that time show input feild every category show diff color in category text if we put pic for every category then?"
+
+**Prompt** "if we use picture of car or use icon type picture and not too light and dark color and last own is not also good / simthing different if we put in image company logo"

@@ -47,17 +47,21 @@ export default function SearchBar({ onSearch, vehicles = [] }: SearchBarProps) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const activeMake = make.trim().length >= 2 ? make.trim() : undefined;
-      const activeModel = model.trim().length >= 2 ? model.trim() : undefined;
-      const activeCategory = category.trim().length >= 2 ? category.trim() : undefined;
+      const payload: {
+        make?: string;
+        model?: string;
+        category?: string;
+        minPrice?: number;
+        maxPrice?: number;
+      } = {};
 
-      onSearch({
-        make: activeMake,
-        model: activeModel,
-        category: activeCategory,
-        minPrice: minPrice ? Number(minPrice) : undefined,
-        maxPrice: maxPrice ? Number(maxPrice) : undefined,
-      });
+      if (make.trim().length >= 2) payload.make = make.trim();
+      if (model.trim().length >= 2) payload.model = model.trim();
+      if (category.trim().length >= 2) payload.category = category.trim();
+      if (minPrice) payload.minPrice = Number(minPrice);
+      if (maxPrice) payload.maxPrice = Number(maxPrice);
+
+      onSearch(payload);
     }, 300);
 
     return () => clearTimeout(timer);
