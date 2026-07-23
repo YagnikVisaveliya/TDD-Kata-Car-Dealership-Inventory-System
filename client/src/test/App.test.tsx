@@ -5,6 +5,6 @@ import App from '../App';
 describe("App component", () => {
     it("should render the login page on the default route", () => {
         render(<App />);
-        expect(screen.getByRole("heading", { name: "Log In" })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: /login --exec/i })).toBeInTheDocument();
     });
 });
