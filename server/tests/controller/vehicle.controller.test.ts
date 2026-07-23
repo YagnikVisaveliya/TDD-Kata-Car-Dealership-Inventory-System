@@ -419,3 +419,83 @@ describe('restockVehicleController', () => {
     assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
   });
 });
+
+describe('getVehiclesController with pagination', () => {
+  test('returns 200 with paginated vehicles using default page and limit', async () => {
+    const fakePrisma = createFakePrisma({
+      findMany: mock.fn(async () => [
+        { id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5 },
+      ]),
+      count: mock.fn(async () => 1),
+    });
+    const req: any = { query: {} };
+    const { res, status, json } = createMockRes();
+
+    await getVehiclesController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
+    const body = (json as any).mock.calls[0].arguments[0];
+    assert.strictEqual(body.data.vehicles.length, 1);
+    assert.strictEqual(body.data.pagination.page, 1);
+    assert.strictEqual(body.data.pagination.limit, 10);
+    assert.strictEqual(body.data.pagination.total, 1);
+    assert.strictEqual(body.data.pagination.totalPages, 1);
+  });
+
+  test('returns 200 with vehicles for a specific page and limit', async () => {
+    const fakePrisma = createFakePrisma({
+      findMany: mock.fn(async (args: any) => {
+        assert.strictEqual(args.skip, 10); // page 2, limit 10 -> skip 10
+        assert.strictEqual(args.take, 10);
+        return [];
+      }),
+      count: mock.fn(async () => 25),
+    });
+    const req: any = { query: { page: '2', limit: '10' } };
+    const { res, status, json } = createMockRes();
+
+    await getVehiclesController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
+    const body = (json as any).mock.calls[0].arguments[0];
+    assert.strictEqual(body.data.pagination.page, 2);
+    assert.strictEqual(body.data.pagination.totalPages, 3); // ceil(25/10)
+  });
+
+  test('returns 400 when page is not a positive integer', async () => {
+    const fakePrisma = createFakePrisma();
+    const req: any = { query: { page: '0' } };
+    const { res, status, json } = createMockRes();
+
+    await getVehiclesController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+    assert.match((json as any).mock.calls[0].arguments[0].message, /page/i);
+  });
+
+  test('returns 400 when limit exceeds maximum allowed', async () => {
+    const fakePrisma = createFakePrisma();
+    const req: any = { query: { limit: '1000' } };
+    const { res, status, json } = createMockRes();
+
+    await getVehiclesController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 400);
+    assert.match((json as any).mock.calls[0].arguments[0].message, /limit/i);
+  });
+
+  test('returns 200 with empty vehicles array when no vehicles exist', async () => {
+    const fakePrisma = createFakePrisma({
+      findMany: mock.fn(async () => []),
+      count: mock.fn(async () => 0),
+    });
+    const req: any = { query: {} };
+    const { res, status, json } = createMockRes();
+
+    await getVehiclesController(fakePrisma as any)(req, res);
+
+    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
+    assert.deepStrictEqual((json as any).mock.calls[0].arguments[0].data.vehicles, []);
+    assert.strictEqual((json as any).mock.calls[0].arguments[0].data.pagination.total, 0);
+  });
+});
