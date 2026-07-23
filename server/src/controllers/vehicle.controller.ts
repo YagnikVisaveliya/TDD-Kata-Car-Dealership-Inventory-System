@@ -7,6 +7,13 @@ interface UpdateVehicleParams {
   id: string; 
 }
 
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 100;
+
+type PaginationResult =
+  | { valid: true; page: number; limit: number }
+  | { valid: false; message: string };
 
 export const createVehicleController = (prisma: PrismaClient) => async (req: Request, res: Response) => {
     try {
@@ -45,10 +52,45 @@ export const createVehicleController = (prisma: PrismaClient) => async (req: Req
     }
 }
 
+function parsePagination(query: Record<string, unknown>): PaginationResult {
+  const pageRaw = query.page !== undefined ? Number(query.page) : DEFAULT_PAGE;
+  const limitRaw = query.limit !== undefined ? Number(query.limit) : DEFAULT_LIMIT;
+
+  if (!Number.isInteger(pageRaw) || pageRaw < 1) {
+    return { valid: false, message: 'page must be a positive integer' };
+  }
+  if (!Number.isInteger(limitRaw) || limitRaw < 1 || limitRaw > MAX_LIMIT) {
+    return { valid: false, message: `limit must be a positive integer up to ${MAX_LIMIT}` };
+  }
+
+  return { valid: true, page: pageRaw, limit: limitRaw };
+}
 export const getVehiclesController = (prisma: PrismaClient) => async (req: Request, res: Response) => {
     try {
-        const vehicles = await prisma.vehicle.findMany();
-        return res.status(200).json(createResponse(true, 'Vehicles retrieved successfully', vehicles));
+        const pagination = parsePagination(req.query as Record<string, unknown>);
+        if (!pagination.valid) {
+            return res.status(400).json(createResponse(false, pagination.message, null));
+        }
+
+        const { page, limit } = pagination;
+        const skip = (page - 1) * limit;
+
+        const [vehicles, total] = await Promise.all([
+            prisma.vehicle.findMany({ skip, take: limit }),
+            prisma.vehicle.count(),
+        ]);
+
+        return res.status(200).json(
+            createResponse(true, 'Vehicles retrieved successfully', {
+                vehicles,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit) || 0,
+                },
+            })
+        );
     } catch (error) {
         console.error('Error in getVehiclesController:', error);
         res.status(500).json(createResponse(false, 'Internal server error', null));

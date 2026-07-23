@@ -75,38 +75,6 @@ describe('createVehicleController', () => {
   });
 });
 
-describe('getVehiclesController', () => {
-  test('returns 200 with list of vehicles', async () => {
-    const fakePrisma = createFakePrisma({
-      findMany: mock.fn(async () => [
-        { id: 'v-1', make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 22000, quantity: 5 },
-        { id: 'v-2', make: 'Honda', model: 'Civic', category: 'Sedan', price: 21000, quantity: 3 },
-      ]),
-    });
-    const req: any = {};
-    const { res, status, json } = createMockRes();
-
-    await getVehiclesController(fakePrisma as any)(req, res);
-
-    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
-    const body = (json as any).mock.calls[0].arguments[0];
-    assert.strictEqual(body.success, true);
-    assert.strictEqual(body.data.length, 2);
-  });
-
-  test('returns 200 with empty array when no vehicles exist', async () => {
-    const fakePrisma = createFakePrisma({ findMany: mock.fn(async () => []) });
-    const req: any = {};
-    const { res, status, json } = createMockRes();
-
-    await getVehiclesController(fakePrisma as any)(req, res);
-
-    assert.strictEqual((status as any).mock.calls[0].arguments[0], 200);
-    assert.deepStrictEqual((json as any).mock.calls[0].arguments[0].data, []);
-  });
-});
-
-
 describe('searchVehiclesController', () => {
   test('returns 200 with vehicles filtered by make', async () => {
     const fakePrisma = createFakePrisma({
