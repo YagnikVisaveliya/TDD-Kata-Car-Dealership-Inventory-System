@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getVehicles, purchaseVehicle,searchVehicles, addVehicle, updateVehicle, deleteVehicle } from "../api/vehicles";
+import { getVehicles, purchaseVehicle,searchVehicles, addVehicle, updateVehicle, deleteVehicle, restockVehicle } from "../api/vehicles";
 import { useAuth } from "../context/AuthContext";
 import VehicleCard from "../components/VehicleCard";
 import type { Vehicle, VehicleSearchParams } from "../types/Vehicle";
@@ -90,6 +90,15 @@ function handleEdit(vehicle: Vehicle) {
   setEditingVehicle(vehicle);
   setShowForm(true);
 }
+async function handleRestock(id: string, quantity: number) {
+  try {
+    const updated = await restockVehicle(id, quantity);
+    setVehicles((prev) => prev.map((v) => (v.id === id ? updated : v)));
+    toast.success("Vehicle restocked");
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || "Restock failed");
+  }
+}
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-900 relative">
@@ -174,6 +183,7 @@ function handleEdit(vehicle: Vehicle) {
                 isAdmin={isAdmin}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onRestock={handleRestock}
               />
             ))}
           </div>
