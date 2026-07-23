@@ -1,7 +1,7 @@
 import { Request, Response} from 'express';
-import { PrismaClient } from '../../generated/prisma/client';
+import { PrismaClient } from '../../generated/prisma/client.js';
 import { createResponse } from '../utils/api-response.js';
-import { isValidVehicleMake, isValidVehicleQuantity, isValidVehiclePrice, isValidVehicleModel, isValidVehicleCategory } from '../utils/InputValidation';
+import { isValidVehicleMake, isValidVehicleQuantity, isValidVehiclePrice, isValidVehicleModel, isValidVehicleCategory } from '../utils/InputValidation.js';
 
 interface UpdateVehicleParams {
   id: string; 

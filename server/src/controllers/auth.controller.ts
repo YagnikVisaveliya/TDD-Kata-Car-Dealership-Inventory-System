@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import { PrismaClient } from '../../generated/prisma/client';
+import { PrismaClient } from '../../generated/prisma/client.js';
 import { createResponse } from '../utils/api-response.js';
 import { isValidEmail, isValidPassword, isValidName} from '../utils/InputValidation.js';
 import jwt from 'jsonwebtoken';
