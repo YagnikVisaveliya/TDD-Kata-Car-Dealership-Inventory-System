@@ -5,6 +5,7 @@ interface VehicleCardProps {
   vehicle: Vehicle;
   onPurchase: (id: string) => void;
   isAdmin: boolean;
+  isPurchasing?: boolean;
   onEdit?: (vehicle: Vehicle) => void;
   onDelete?: (id: string) => void;
   onRestock?: (id: string, quantity: number) => void;
@@ -14,6 +15,7 @@ export default function VehicleCard({
   vehicle,
   onPurchase,
   isAdmin,
+  isPurchasing = false,
   onEdit,
   onDelete,
   onRestock,
@@ -55,10 +57,10 @@ export default function VehicleCard({
 
         <button
           onClick={() => onPurchase(vehicle.id)}
-          disabled={outOfStock}
+          disabled={outOfStock || isPurchasing}
           className="w-full bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-sm py-2.5 rounded-xl transition-all active:scale-[0.985] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
         >
-          {outOfStock ? "Out of Stock" : "Purchase Asset"}
+          {outOfStock ? "Out of Stock" : isPurchasing ? "Purchasing..." : "Purchase Asset"}
         </button>
 
         {isAdmin && (

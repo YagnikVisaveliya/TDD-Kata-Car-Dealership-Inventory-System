@@ -16,9 +16,9 @@ const vehicle: Vehicle = {
 describe("VehicleCard", () => {
   it("renders vehicle details", () => {
     render(<VehicleCard vehicle={vehicle} onPurchase={vi.fn()} isAdmin={false} />);
-    expect(screen.getByText("Toyota Corolla")).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Toyota Corolla/i })).toBeInTheDocument();
     expect(screen.getByText(/22,000|22000/)).toBeInTheDocument();
-    expect(screen.getByText(/3 in stock/i)).toBeInTheDocument();
+    expect(screen.getByText(/3 units left/i)).toBeInTheDocument();
   });
 
   it("enables the Purchase button when quantity > 0", () => {
@@ -30,7 +30,7 @@ describe("VehicleCard", () => {
     render(
       <VehicleCard vehicle={{ ...vehicle, quantity: 0 }} onPurchase={vi.fn()} isAdmin={false} />
     );
-    expect(screen.getByRole("button", { name: /purchase/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /out of stock/i })).toBeDisabled();
   });
 
   it("calls onPurchase with the vehicle id when clicked", async () => {
@@ -44,28 +44,28 @@ describe("VehicleCard", () => {
     const { rerender } = render(
       <VehicleCard vehicle={vehicle} onPurchase={vi.fn()} isAdmin={false} />
     );
-    expect(screen.queryByRole("button", { name: /edit/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /modify/i })).not.toBeInTheDocument();
 
     rerender(<VehicleCard vehicle={vehicle} onPurchase={vi.fn()} isAdmin={true} />);
-    expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /delete/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /modify/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /remove/i })).toBeInTheDocument();
   });
   it("shows a restock input and button for admins", () => {
   render(<VehicleCard vehicle={vehicle} onPurchase={vi.fn()} isAdmin={true} onRestock={vi.fn()} />);
-  expect(screen.getByLabelText(/restock quantity/i)).toBeInTheDocument();
+  expect(screen.getByLabelText(/restock count/i)).toBeInTheDocument();
   expect(screen.getByRole("button", { name: /restock/i })).toBeInTheDocument();
 });
 
 it("does not show restock controls for non-admins", () => {
   render(<VehicleCard vehicle={vehicle} onPurchase={vi.fn()} isAdmin={false} onRestock={vi.fn()} />);
-  expect(screen.queryByLabelText(/restock quantity/i)).not.toBeInTheDocument();
+  expect(screen.queryByLabelText(/restock count/i)).not.toBeInTheDocument();
 });
 
 it("calls onRestock with id and entered quantity", async () => {
   const onRestock = vi.fn();
   render(<VehicleCard vehicle={vehicle} onPurchase={vi.fn()} isAdmin={true} onRestock={onRestock} />);
 
-  await userEvent.type(screen.getByLabelText(/restock quantity/i), "5");
+  await userEvent.type(screen.getByLabelText(/restock count/i), "5");
   await userEvent.click(screen.getByRole("button", { name: /restock/i }));
 
   expect(onRestock).toHaveBeenCalledWith("v1", 5);

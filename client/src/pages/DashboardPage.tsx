@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | undefined>(undefined);
+  const [purchasingVehicleId, setPurchasingVehicleId] = useState<string | null>(null);
 
   const isAdmin = user?.role === "ADMIN";
 
@@ -35,12 +36,15 @@ export default function DashboardPage() {
   }, []);
 
   async function handlePurchase(id: string) {
+    setPurchasingVehicleId(id);
     try {
-      const updated = await purchaseVehicle(id, 1);
-      setVehicles((prev) => prev.map((v) => (v.id === id ? updated : v)));
+      await purchaseVehicle(id, 1);
+      await loadVehicles();
       toast.success("Vehicle purchased!");
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Purchase failed");
+    } finally {
+      setPurchasingVehicleId(null);
     }
   }
 
@@ -180,6 +184,7 @@ async function handleRestock(id: string, quantity: number) {
                 key={v.id}
                 vehicle={v}
                 onPurchase={handlePurchase}
+                isPurchasing={purchasingVehicleId === v.id}
                 isAdmin={isAdmin}
                 onEdit={handleEdit}
                 onDelete={handleDelete}

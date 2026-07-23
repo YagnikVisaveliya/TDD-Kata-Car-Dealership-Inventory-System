@@ -81,8 +81,8 @@ describe("vehicles api", () => {
 
   it("purchases a vehicle by id", async () => {
     mockPost.mockResolvedValue({ data: { ...sampleVehicle, quantity: 4 } });
-    const result = await purchaseVehicle("v1",1);
-    expect(mockPost).toHaveBeenCalledWith("/api/vehicles/v1/purchase");
+    const result = await purchaseVehicle("v1", 1);
+    expect(mockPost).toHaveBeenCalledWith("/api/vehicles/v1/purchase", { quantity: 1 });
     expect(result.quantity).toBe(4);
   });
 

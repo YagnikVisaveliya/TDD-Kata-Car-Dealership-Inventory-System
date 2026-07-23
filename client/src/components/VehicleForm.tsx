@@ -126,7 +126,7 @@ export default function VehicleForm({ vehicle, onSubmit, onCancel }: VehicleForm
           type="submit"
           className="flex-1 bg-zinc-950 hover:bg-zinc-900 text-white font-bold text-xs uppercase tracking-widest py-3 rounded-xl transition-all shadow-lg shadow-zinc-950/10 active:scale-[0.985] cursor-pointer"
         >
-          {isEdit ? "Commit Changes" : "Save Asset"}
+          {isEdit ? "Update Vehicle" : "Add Vehicle"}
         </button>
         <button
           type="button"

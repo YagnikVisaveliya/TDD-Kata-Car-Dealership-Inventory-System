@@ -1,7 +1,9 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import Cookies from "js-cookie";
 import type { User } from "../types/User";
 import { login as loginApi, register as registerApi } from "../api/auth";
+import { onUnauthorized } from "../api/authEvents";
+import { toast } from "react-hot-toast/headless";
 
 interface AuthContextValue {
   user: User | null;
@@ -55,6 +57,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
   }
+  useEffect(() => {
+    onUnauthorized(() => {
+      logout();
+      toast.error("Session expired. Please log in again.");
+    });
+  }, []);
+  
 
   return (
     <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
